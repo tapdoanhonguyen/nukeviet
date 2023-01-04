@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -154,7 +154,7 @@ if (!empty($admin_pre_data) and in_array(($opt = $nv_Request->get_title('auth', 
         $stmt->bindValue(':last_agent', NV_USER_AGENT, PDO::PARAM_STR);
         $stmt->execute();
 
-        $nv_Request->set_Cookie('nvloginhash', json_encode($user), NV_LIVE_COOKIE_TIME);
+        NukeViet\Core\User::set_userlogin_hash($user, true);
 
         $tokend_key = md5($admin_pre_data['username'] . '_' . NV_CURRENTTIME . '_users_confirm_pass_' . NV_CHECK_SESSION);
         $tokend = md5('users_confirm_pass_' . NV_CHECK_SESSION);
@@ -308,14 +308,22 @@ if (empty($admin_pre_data) and $nv_Request->isset_request('nv_login,nv_password'
     }
 
     // Kiểm tra đăng nhập bằng email hay username
-    $check_email = nv_check_valid_email($nv_username, true);
-    if ($check_email[0] == '') {
-        $nv_username = $check_email[1];
+    if (!empty($global_config['login_name_type']) and $global_config['login_name_type'] == 1) {
+        $sql = "t2.md5username ='" . nv_md5safe($nv_username) . "'";
+        $login_email = false;
+    } elseif (!empty($global_config['login_name_type']) and $global_config['login_name_type'] == 2) {
         $sql = 't2.email =' . $db->quote($nv_username);
         $login_email = true;
     } else {
-        $sql = "t2.md5username ='" . nv_md5safe($nv_username) . "'";
-        $login_email = false;
+        $check_email = nv_check_valid_email($nv_username, true);
+        if (empty($check_email[0])) {
+            $nv_username = $check_email[1];
+            $sql = 't2.email =' . $db->quote($nv_username);
+            $login_email = true;
+        } else {
+            $sql = "t2.md5username ='" . nv_md5safe($nv_username) . "'";
+            $login_email = false;
+        }
     }
 
     // Lấy thông tin đăng nhập
@@ -363,10 +371,10 @@ if (empty($admin_pre_data) and $nv_Request->isset_request('nv_login,nv_password'
     }
 
     /*
-    * Đăng nhập bước đầu thành công, kiểm tra xem hệ thống có bắt xác thực hai bước hay không
-    * Nếu không thì xem như đã thành công.
-    * Nếu có lưu lại thông tin xác thực bước 1 và load lại trang để kiểm tra xử lý tiếp
-    */
+     * Đăng nhập bước đầu thành công, kiểm tra xem hệ thống có bắt xác thực hai bước hay không
+     * Nếu không thì xem như đã thành công.
+     * Nếu có lưu lại thông tin xác thực bước 1 và load lại trang để kiểm tra xử lý tiếp
+     */
     // Kiểm tra cấu hình toàn hệ thống
     $_2step_require = in_array((int) $global_config['two_step_verification'], [1, 3], true);
     if (!$_2step_require) {
@@ -452,6 +460,7 @@ if ($admin_login_success === true) {
     $sth->bindValue(':last_agent', NV_USER_AGENT, PDO::PARAM_STR);
     $sth->execute();
 
+    $nv_Request->sessionRegenerateId(true);
     $nv_Request->set_Session('admin', $admin_encode);
     $nv_Request->set_Session('online', '1|' . NV_CURRENTTIME . '|' . NV_CURRENTTIME . '|0');
     $nv_Request->set_Cookie('isal', 1, NV_LIVE_COOKIE_TIME, false);
@@ -469,7 +478,7 @@ if ($admin_login_success === true) {
     $nv_Request->unset_request('admin_pre', 'session');
 
     if ($global_config['admin_user_logout']) {
-        $nv_Request->unset_request('nvloginhash', 'cookie');
+        NukeViet\Core\User::unset_userlogin_hash();
     }
 
     if ($nv_Request->isset_request('nv_login,nv_password', 'post') or $nv_Request->isset_request('submit2scode', 'post')) {
@@ -539,7 +548,7 @@ if (empty($admin_pre_data)) {
     }
 
     // Kiểm tra site có dùng SSL không
-    if (!((isset($_SERVER['HTTPS']) and (strtolower($_SERVER['HTTPS']) == 'on' or $_SERVER['HTTPS'] == '1')) or $_SERVER['SERVER_PORT'] == 443)) {
+    if ($nv_Server->getOriginalProtocol() !== 'https') {
         $xtpl->parse('pre_form.warning_ssl');
     }
 
@@ -605,6 +614,10 @@ if (empty($admin_pre_data)) {
 
     $xtpl->parse('2step_form');
     $login_content = $xtpl->text('2step_form');
+}
+
+if ($global_config['passshow_button'] === 1) {
+    $xtpl->parse('main.passshow_button');
 }
 
 // Logo của site

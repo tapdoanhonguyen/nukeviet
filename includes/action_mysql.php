@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -13,7 +13,7 @@ if (!defined('NV_MAINFILE')) {
     exit('Stop!!!');
 }
 
-define('NV_MODULE_SETUP_DEFAULT', 'users,statistics,banners,zalo,seek,news,contact,about,siteterms,voting,feeds,menu,page,comment,freecontent,two-step-verification');
+define('NV_MODULE_SETUP_DEFAULT', 'users,push,statistics,banners,zalo,seek,news,contact,about,siteterms,voting,feeds,menu,page,comment,freecontent,two-step-verification');
 
 /**
  * @param string $table_des
@@ -75,12 +75,12 @@ function nv_create_table_sys($lang)
          admin_file tinyint(1) unsigned NOT NULL DEFAULT '0',
          theme varchar(100) DEFAULT '',
          mobile varchar(100) DEFAULT '',
-          description varchar(255) DEFAULT '',
+         description varchar(255) DEFAULT '',
          keywords text,
          groups_view varchar(255) NOT NULL,
          weight tinyint(3) unsigned NOT NULL DEFAULT '1',
          act tinyint(1) unsigned NOT NULL DEFAULT '0',
-         admins varchar(255) DEFAULT '',
+         admins varchar(4000) DEFAULT '',
          rss tinyint(4) NOT NULL DEFAULT '1',
          sitemap tinyint(4) NOT NULL DEFAULT '1',
          PRIMARY KEY (title)
@@ -95,7 +95,8 @@ function nv_create_table_sys($lang)
          link varchar(255) DEFAULT NULL,
          template varchar(55) DEFAULT NULL,
          position varchar(55) DEFAULT NULL,
-         exp_time int(11) DEFAULT '0',
+         dtime_type CHAR(50) NOT NULL DEFAULT 'regular',
+         dtime_details TEXT NULL DEFAULT NULL,
          active varchar(10) DEFAULT '1',
          act tinyint(1) unsigned NOT NULL DEFAULT '1',
          groups_view varchar(255) DEFAULT '',
@@ -105,8 +106,7 @@ function nv_create_table_sys($lang)
          PRIMARY KEY (bid),
          KEY theme (theme),
          KEY module (module),
-         KEY position (position),
-         KEY exp_time (exp_time)
+         KEY position (position)
     ) ENGINE=MyISAM";
 
     $sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . '_' . $lang . "_blocks_weight (
@@ -122,6 +122,7 @@ function nv_create_table_sys($lang)
          alias varchar(55) NOT NULL DEFAULT '',
          func_custom_name varchar(255) NOT NULL,
          func_site_title varchar(255) NOT NULL DEFAULT '',
+         description VARCHAR(255) NOT NULL DEFAULT '',
          in_module varchar(50) NOT NULL,
          show_func tinyint(4) NOT NULL DEFAULT '0',
          in_submenu tinyint(1) unsigned NOT NULL DEFAULT '0',
@@ -177,18 +178,19 @@ function nv_create_table_sys($lang)
          ('zalo', 'zalo', 'zalo', 'zalo', 'zalo', 'Zalo', 'Zalo', 1626512400, 0, 1, '', '', '', '', '0', 2, 1, '', 1, 1),
          ('news', 'news', 'news', 'news', 'news', 'News', '', 1626512400, 1, 1, '', '', '', '', '0', 3, 1, '', 1, 1),
          ('users', 'users', 'users', 'users', 'users', 'Users', 'Users', 1626512400, 1, 1, '', '', '', '', '0', 4, 1, '', 0, 1),
-         ('contact', 'contact', 'contact', 'contact', 'contact', 'Contact', '', 1626512400, 1, 1, '', '', '', '', '0', 5, 1, '', 0, 1),
-         ('statistics', 'statistics', 'statistics', 'statistics', 'statistics', 'Statistics', '', 1626512400, 1, 0, '', '', '', '', '0', 6, 1, '', 0, 1),
-         ('voting', 'voting', 'voting', 'voting', 'voting', 'Voting', '', 1626512400, 1, 1, '', '', '', '', '0', 7, 1, '', 1, 1),
-         ('banners', 'banners', 'banners', 'banners', 'banners', 'Banners', '', 1626512400, 1, 1, '', '', '', '', '0', 8, 1, '', 0, 1),
-         ('seek', 'seek', 'seek', 'seek', 'seek', 'Search', '', 1626512400, 1, 0, '', '', '', '', '0', 9, 1, '', 0, 1),
-         ('menu', 'menu', 'menu', 'menu', 'menu', 'Menu Site', '', 1626512400, 0, 1, '', '', '', '', '0', 10, 1, '', 0, 1),
-         ('feeds', 'feeds', 'feeds', 'feeds', 'feeds', 'Rss Feeds', '', 1626512400, 1, 1, '', '', '', '', '0', 11, 1, '', 0, 1),
-         ('page', 'page', 'page', 'page', 'page', 'Page', '', 1626512400, 1, 1, '', '', '', '', '0', 12, 1, '', 1, 0),
-         ('comment', 'comment', 'comment', 'comment', 'comment', 'Comment', '', 1626512400, 1, 1, '', '', '', '', '0', 12, 1, '', 0, 1),
-         ('siteterms', 'page', 'siteterms', 'siteterms', 'page', 'Siteterms', '', 1626512400, 1, 1, '', '', '', '', '0', 14, 1, '', 1, 1),
-         ('freecontent', 'freecontent', 'freecontent', 'freecontent', 'freecontent', 'Free Content', '', 1626512400, 0, 1, '', '', '', '', '0', 15, 1, '', 0, 1),
-         ('two-step-verification', 'two-step-verification', 'two_step_verification', 'two-step-verification', 'two_step_verification', 'Two-Step Verification', '', 1626512400, 1, 0, '', '', '', '', '0', 16, 1, '', 0, 1)";
+         ('push', 'push', 'push', 'push', 'push', 'Push', 'Push', 1626512400, 1, 1, '', '', '', '', '0', 5, 1, '', 0, 1),
+         ('contact', 'contact', 'contact', 'contact', 'contact', 'Contact', '', 1626512400, 1, 1, '', '', '', '', '0', 6, 1, '', 0, 1),
+         ('statistics', 'statistics', 'statistics', 'statistics', 'statistics', 'Statistics', '', 1626512400, 1, 0, '', '', '', '', '0', 7, 1, '', 0, 1),
+         ('voting', 'voting', 'voting', 'voting', 'voting', 'Voting', '', 1626512400, 1, 1, '', '', '', '', '0', 8, 1, '', 1, 1),
+         ('banners', 'banners', 'banners', 'banners', 'banners', 'Banners', '', 1626512400, 1, 1, '', '', '', '', '0', 9, 1, '', 0, 1),
+         ('seek', 'seek', 'seek', 'seek', 'seek', 'Search', '', 1626512400, 1, 0, '', '', '', '', '0', 10, 1, '', 0, 1),
+         ('menu', 'menu', 'menu', 'menu', 'menu', 'Menu Site', '', 1626512400, 0, 1, '', '', '', '', '0', 11, 1, '', 0, 1),
+         ('feeds', 'feeds', 'feeds', 'feeds', 'feeds', 'Rss Feeds', '', 1626512400, 1, 1, '', '', '', '', '0', 12, 1, '', 0, 1),
+         ('page', 'page', 'page', 'page', 'page', 'Page', '', 1626512400, 1, 1, '', '', '', '', '0', 13, 1, '', 1, 0),
+         ('comment', 'comment', 'comment', 'comment', 'comment', 'Comment', '', 1626512400, 1, 1, '', '', '', '', '0', 14, 1, '', 0, 1),
+         ('siteterms', 'page', 'siteterms', 'siteterms', 'page', 'Siteterms', '', 1626512400, 1, 1, '', '', '', '', '0', 15, 1, '', 1, 1),
+         ('freecontent', 'freecontent', 'freecontent', 'freecontent', 'freecontent', 'Free Content', '', 1626512400, 0, 1, '', '', '', '', '0', 16, 1, '', 0, 1),
+         ('two-step-verification', 'two-step-verification', 'two_step_verification', 'two-step-verification', 'two_step_verification', 'Two-Step Verification', '', 1626512400, 1, 0, '', '', '', '', '0', 17, 1, '', 0, 1)";
 
     $sql_create_table[] = 'INSERT INTO ' . NV_CONFIG_GLOBALTABLE . " (lang, module, config_name, config_value) VALUES
          ('" . $lang . "', 'global', 'site_domain', ''),
@@ -211,6 +213,8 @@ function nv_create_table_sys($lang)
          ('" . $lang . "', 'global', 'autologosize2', '40'),
          ('" . $lang . "', 'global', 'autologosize3', '30'),
          ('" . $lang . "', 'global', 'autologomod', ''),
+         ('" . $lang . "', 'global', 'tinify_active', '0'),
+         ('" . $lang . "', 'global', 'tinify_api', ''),
          ('" . $lang . "', 'global', 'name_show', '" . ($lang != 'vi' ? 1 : 0) . "'),
          ('" . $lang . "', 'global', 'disable_site_content', 'For technical reasons Web site temporary not available. we are very sorry for any inconvenience!'),
          ('" . $lang . "', 'global', 'opensearch_link', ''),

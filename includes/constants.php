@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -55,8 +55,11 @@ define('NV_BANNER_DIR', 'banners');
 //TDT file tam thoi, toi da 3 ky tu
 define('NV_TEMPNAM_PREFIX', 'nv_');
 
-//Ten file error_log
+// Ten file error_log
 define('NV_ERRORLOGS_FILENAME', 'error_log');
+
+// Ten file notice_log
+define('NV_NOTICELOGS_FILENAME', 'notice_log');
 
 //duoi cua file log
 define('NV_LOGS_EXT', 'log');
@@ -257,6 +260,7 @@ $meta_property = [
     'og:image:type' => '',
     'og:image:width' => '',
     'og:image:height' => '',
+    'og:image:alt' => '',
     'og:url' => ''
 ];
 

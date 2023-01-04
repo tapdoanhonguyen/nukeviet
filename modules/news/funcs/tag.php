@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -28,11 +28,16 @@ if (isset($array_op[1])) {
 $stmt = $db_slave->prepare('SELECT tid, numnews, title, image, description, keywords FROM ' . NV_PREFIXLANG . '_' . $module_data . '_tags WHERE alias= :alias');
 $stmt->bindParam(':alias', $alias, PDO::PARAM_STR);
 $stmt->execute();
-list($tid, $numnews, $page_title, $image_tag, $description, $key_words) = $stmt->fetch(3);
-
-if ($tid > 0) {
+$row = $stmt->fetch(3);
+if (!empty($row)) {
+    list($tid, $numnews, $page_title, $image_tag, $description, $key_words) = $row;
     if (empty($page_title)) {
-        $page_title = nv_ucfirst(trim(str_replace('-', ' ', $alias)));
+        $page_title = nv_ucfirst($key_words);
+
+        $sths = $db_slave->prepare('UPDATE ' . NV_PREFIXLANG . '_' . $module_data . '_tags SET title = :title WHERE alias = :alias');
+        $sths->bindParam(':title', $page_title, PDO::PARAM_STR);
+        $sths->bindParam(':alias', $alias, PDO::PARAM_STR);
+        $sths->execute();
     }
 
     $page_url = $base_url = NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=tag/' . $alias;

@@ -42,7 +42,7 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
 
     require NV_ROOTDIR . '/modules/users/admin/config_' . $oauth_config . '.php';
 } else {
-    if ($nv_Request->isset_request('submit', 'post')) {
+    if ($nv_Request->isset_request('save', 'post')) {
         if ($checkss != $nv_Request->get_string('checkss', 'post')) {
             nv_redirect_location(NV_BASE_ADMINURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name . '&' . NV_OP_VARIABLE . '=' . $op . '&rand=' . nv_genpass());
         }
@@ -85,6 +85,8 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
         $array_config['pass_timeout'] = 86400 * $nv_Request->get_int('pass_timeout', 'post', 0);
         $array_config['oldpass_num'] = $nv_Request->get_int('oldpass_num', 'post', 5);
         $array_config['send_pass'] = (int) $nv_Request->get_bool('send_pass', 'post', false);
+        $array_config['login_name_type'] = $nv_Request->get_int('login_name_type', 'post', 3);
+        ($array_config['login_name_type'] != 1 and $array_config['login_name_type'] != 2) && $array_config['login_name_type'] = 3;
 
         $array_config['whoviewuser'] = $nv_Request->get_typed_array('whoviewuser', 'post', 'int', []);
         $array_config['whoviewuser'] = !empty($array_config['whoviewuser']) ? implode(',', nv_groups_post(array_intersect($array_config['whoviewuser'], array_keys($groups_list)))) : '';
@@ -121,6 +123,12 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
         $stmt->execute();
 
         if (defined('NV_IS_GODADMIN') and empty($global_config['idsite'])) {
+            // Thời gian tài khoản chờ kích hoạt bị xóa
+            $array_config['register_active_time'] = 3600 * $nv_Request->get_int('register_active_time', 'post', 0);
+            $stmt = $db->prepare('UPDATE ' . NV_MOD_TABLE . '_config SET content= :content, edit_time=' . NV_CURRENTTIME . " WHERE config='register_active_time'");
+            $stmt->bindParam(':content', $array_config['register_active_time'], PDO::PARAM_STR);
+            $stmt->execute();
+
             // Cau hinh kich thuoc avatar
             $array_config['avatar_width'] = $nv_Request->get_int('avatar_width', 'post', 120);
             $stmt = $db->prepare('UPDATE ' . NV_MOD_TABLE . '_config SET content= :content, edit_time=' . NV_CURRENTTIME . " WHERE config='avatar_width'");
@@ -226,7 +234,7 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
         config='deny_email' OR config='deny_name' OR config='password_simple' OR
         config='avatar_width' OR config='avatar_height' OR config='active_group_newusers' OR
         config='active_editinfo_censor' OR config='active_user_logs' OR config='min_old_user' OR
-        config='auto_assign_oauthuser' OR config='admin_email'
+        config='auto_assign_oauthuser' OR config='admin_email' OR config='register_active_time'
     ";
     $result = $db->query($sql);
     while (list($config, $content) = $result->fetch(3)) {
@@ -240,6 +248,7 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
     $array_config['active_user_logs'] = !empty($array_config['active_user_logs']) ? ' checked="checked"' : '';
     $array_config['auto_assign_oauthuser'] = !empty($array_config['auto_assign_oauthuser']) ? ' checked="checked"' : '';
     $array_config['admin_email'] = !empty($array_config['admin_email']) ? ' checked="checked"' : '';
+    $array_config['register_active_time'] = $array_config['register_active_time'] / 3600;
 
     $array_name_show = [
         0 => $lang_module['lastname_firstname'],
@@ -409,6 +418,17 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
         $xtpl->parse('main.oldpass_num');
     }
 
+    $login_name_types = [1, 2, 3];
+    $login_name_type = !empty($global_config['login_name_type']) ? (int) $global_config['login_name_type'] : 3;
+    foreach ($login_name_types as $login_name_type) {
+        $xtpl->assign('TYPE', [
+            'val' => $login_name_type,
+            'sel' => ($login_name_type == $login_name_type) ? ' selected="selected"' : '',
+            'title' => $lang_module['login_name_type_' . $login_name_type]
+        ]);
+        $xtpl->parse('main.login_name_type');
+    }
+
     foreach ($array_openid_processing as $key => $name) {
         $checked = (!empty($array_config['openid_processing']) and in_array((string) $key, $array_config['openid_processing'], true)) ? ' checked="checked"' : '';
         $xtpl->assign('OPENID_PROCESSING', [
@@ -478,6 +498,7 @@ if (preg_match('/^([a-z0-9\-\_]+)$/', $oauth_config, $m) and file_exists(NV_ROOT
     if (defined('NV_IS_GODADMIN') and empty($global_config['idsite'])) {
         $xtpl->assign('LINK_EDITCENSOR', sprintf($lang_module['active_editinfo_censor_note1'], NV_BASE_ADMINURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=editcensor'));
         $xtpl->parse('main.avatar_size');
+        $xtpl->parse('main.register_active_time');
         $xtpl->parse('main.active_group_newusers');
         $xtpl->parse('main.active_editinfo_censor');
         $xtpl->parse('main.active_user_logs');

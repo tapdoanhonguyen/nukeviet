@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -543,3 +543,12 @@ $lang_module['security_alert_2stepoff'] = 'Your <strong>%s</strong> account has 
 $lang_module['email_dot_equivalent'] = 'E-mail with a dot before the @ are the version of an email without a dot';
 $lang_module['forcedrelogin'] = 'Force re-login';
 $lang_module['forcedrelogin_note'] = 'User has logged out';
+$lang_module['login_name_type'] = 'Login name type';
+$lang_module['login_name_type_1'] = 'Username';
+$lang_module['login_name_type_2'] = 'Email';
+$lang_module['login_name_type_3'] = 'Username or Email';
+$lang_module['censorship'] = 'Censorship';
+$lang_module['leave_blank_note'] = 'Leave blank if using the value entered by the registrant';
+$lang_module['register_active_time'] = 'Time for the account to wait for activation';
+$lang_module['register_active_time_note'] = 'If the value is greater than 0, the account pending activation will be deleted after this period. If it is 0, the account waiting for activation will not be deleted automatically';
+$lang_module['hours'] = 'hours';

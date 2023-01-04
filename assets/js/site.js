@@ -86,28 +86,6 @@ function cookie_notice_hide() {
     $(".cookie-notice").hide()
 }
 
-//Toggle Password Visibility
-function togglePassShow(btn) {
-    var input = $(btn).parent().find("[type=password],[type=text]"),
-        togglePassHide = function() {
-            $("[type=text][data-type=password]").each(function() {
-                $(this).removeAttr('data-type').prop("type", "password").next().removeClass('show');
-                clearTimeout(resetPass)
-            })
-        };
-    if ('password' == input.prop('type')) {
-        input.attr('data-type', 'password');
-        input.prop("type", "text");
-        $(btn).addClass("show");
-        clearTimeout(resetPass);
-        resetPass = setTimeout(function() {
-            togglePassHide()
-        }, 2E4);
-    } else {
-        togglePassHide()
-    }
-}
-
 // enterToEvent
 function enterToEvent(e, obj, objEvent) {
     13 != e.which || e.shiftKey || (e.preventDefault(), $(obj).trigger(objEvent))
@@ -550,19 +528,16 @@ $(function() {
 
     //XSSsanitize + Captcha
     $('body').on('click', '[type=submit]:not([name])', function(e) {
-        btnClickSubmit(e, $(this).parents('form'))
+        var form = $(this).parents('form');
+        if (!$('[name=submit]', form).length) {
+            btnClickSubmit(e, form)
+        }
     });
 
     // Thay Captcha hình mới
     $('body').on('click', '[data-toggle=change_captcha]', function(e) {
         e.preventDefault();
         $(this).data('obj') ? change_captcha($(this).data('obj')) : change_captcha()
-    });
-
-    // Ẩn/hiển thị mật khẩu
-    $('body').on('click', '[data-toggle=togglePassShow]', function(e) {
-        e.preventDefault();
-        togglePassShow(this)
     });
 
     // enterToEvent

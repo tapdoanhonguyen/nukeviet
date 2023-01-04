@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -23,9 +23,10 @@ define('NV_START_TIME', microtime(true));
 define('NV_CURRENTTIME', isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time());
 
 // Khong cho xac dinh tu do cac variables
-$db_config = $global_config = $module_config = $client_info = $user_info = $admin_info = $sys_info = $lang_global = $lang_module = $rss = $nv_vertical_menu = $array_mod_title = $content_type = $submenu = $error_info = $countries = $loadScript = $headers = $theme_config = $nv_hooks = $nv_plugins = [];
-$page_title = $key_words = $page_url = $canonicalUrl = $prevPage = $nextPage = $mod_title = $editor_password = $my_head = $my_footer = $description = $contents = '';
+$db_config = $global_config = $module_config = $client_info = $user_info = $admin_info = $sys_info = $lang_global = $lang_module = $rss = $nv_vertical_menu = $array_mod_title = $content_type = $submenu = $error_info = $countries = $loadScript = $headers = $theme_config = $nv_hooks = $nv_plugins = $custom_preloads = $user_cookie = [];
+$page_title = $key_words = $page_url = $canonicalUrl = $prevPage = $nextPage = $editor_password = $my_head = $my_footer = $description = $contents = '';
 $editor = false;
+$isIndexFile = (substr($_SERVER['PHP_SELF'], -9, 9) === 'index.php');
 
 // Ket noi voi cac file constants, config
 require NV_ROOTDIR . '/includes/constants.php';
@@ -33,6 +34,12 @@ if (file_exists(NV_ROOTDIR . '/' . NV_DATADIR . '/config_global.php')) {
     require NV_ROOTDIR . '/' . NV_DATADIR . '/config_global.php';
 }
 require NV_ROOTDIR . '/vendor/autoload.php';
+
+// Xac dinh IP cua client
+$ips = new NukeViet\Core\Ips();
+define('NV_FORWARD_IP', $ips::$forward_ip);
+define('NV_REMOTE_ADDR', $ips::$remote_addr);
+define('NV_CLIENT_IP', $ips::$remote_ip);
 
 // Ket noi voi class Error_handler
 $ErrorHandler = new NukeViet\Core\Error($global_config);
@@ -59,19 +66,26 @@ if (empty($global_config['my_domains'])) {
     $global_config['my_domains'] = [NV_SERVER_NAME];
 } else {
     $global_config['my_domains'] = array_map('trim', explode(',', strtolower($global_config['my_domains'])));
+    // Nếu domain truy cập không đúng sẽ chuyển đến domain đúng (Báo mã 301)
+    if (!in_array(NV_SERVER_NAME, $global_config['my_domains'], true)) {
+        $location = $nv_Server->getOriginalProtocol() . '://' . $global_config['my_domains'][0] . $_SERVER['REQUEST_URI'];
+        if (in_array(substr(php_sapi_name(), 0, 3), ['cgi', 'fpm'], true)) {
+            header('Location: ' . $location);
+            header('Status: 301 Moved Permanently');
+        } else {
+            header('Location: ' . $location, true, 301);
+        }
+        exit(0);
+    }
 }
 
-define('NV_STATIC_URL', !empty($global_config['nv_static_url']) ? '//' . $global_config['nv_static_url'] . '/' : NV_BASE_SITEURL);
+// The Mozilla CA certificate store in PEM format
+// This bundle was generated at Tue Apr 26 03:12:05 2022 GMT
+// https://curl.se/docs/caextract.html
+$global_config['default_cacert'] = NV_ROOTDIR . '/' . NV_CERTS_DIR . '/cacert.pem';
 
 require NV_ROOTDIR . '/includes/ini.php';
 require NV_ROOTDIR . '/includes/xtemplate.class.php';
-
-// Xac dinh IP cua client
-$ips = new NukeViet\Core\Ips($sys_info);
-// define( 'NV_SERVER_IP', $ips->server_ip );
-define('NV_FORWARD_IP', $ips->forward_ip);
-define('NV_REMOTE_ADDR', $ips->remote_addr);
-define('NV_CLIENT_IP', $ips->remote_ip);
 
 define('SYSTEM_UPLOADS_DIR', NV_UPLOADS_DIR);
 define('NV_FILES_DIR', NV_ASSETS_DIR);
@@ -133,6 +147,7 @@ require NV_ROOTDIR . '/includes/utf8/' . $sys_info['string_handler'] . '_string_
 require NV_ROOTDIR . '/includes/utf8/utf8_functions.php';
 require NV_ROOTDIR . '/includes/core/filesystem_functions.php';
 require NV_ROOTDIR . '/includes/functions.php';
+require NV_ROOTDIR . '/includes/new_functions.php';
 require NV_ROOTDIR . '/includes/core/theme_functions.php';
 
 // IP Ban
@@ -142,13 +157,13 @@ if (nv_is_banIp(NV_CLIENT_IP)) {
 
 // Chan proxy
 if ($global_config['proxy_blocker'] != 0) {
-    $client_info['is_proxy'] = $ips->nv_check_proxy();
+    $client_info['is_proxy'] = $ips::nv_check_proxy();
     if (nv_is_blocker_proxy($client_info['is_proxy'], $global_config['proxy_blocker'])) {
         trigger_error('ERROR: You are behind a proxy server. Please disconnect and come again!', 256);
     }
 }
 
-if (defined('NV_SYSTEM')) {
+if (defined('NV_SYSTEM') and $isIndexFile) {
     require NV_ROOTDIR . '/includes/request_uri.php';
 }
 
@@ -159,14 +174,6 @@ $client_info['clid'] = $nv_Request->get_title('clid', 'cookie', '');
 if (!preg_match('/^[a-z0-9]{32}$/', $client_info['clid'])) {
     $client_info['clid'] = md5(microtime(true) . bin2hex(openssl_random_pseudo_bytes(32)) . $global_config['sitekey']);
     $nv_Request->set_Cookie('clid', $client_info['clid'], 315360000);
-}
-
-// Cap nhat thong tin Server
-if ($nv_Request->isset_request('__serverInfoUpdate', 'post')) {
-    require NV_ROOTDIR . '/includes/sinfoUpdate.php';
-}
-if (!$isErrorFile and !$serverInfoUpdated) {
-    post_async(NV_BASE_SITEURL . 'index.php', ['__serverInfoUpdate' => 1]);
 }
 
 define('NV_HEADERSTATUS', $nv_Request->headerstatus);
@@ -186,11 +193,15 @@ define('NV_CHECK_SESSION', md5(NV_CACHE_PREFIX . $nv_Request->session_id));
 
 define('NV_USER_AGENT', $nv_Request->user_agent);
 
+// Lấy thông tin cookie của user
+defined('NV_SYSTEM') && $user_cookie =  NukeViet\Core\User::get_userlogin_hash();
+
 // Ngon ngu
 require NV_ROOTDIR . '/includes/language.php';
 require NV_ROOTDIR . '/includes/language/' . NV_LANG_INTERFACE . '/global.php';
 require NV_ROOTDIR . '/includes/language/' . NV_LANG_INTERFACE . '/functions.php';
 
+$cdn_is_enabled = false;
 // Load các plugin
 if (!empty($nv_plugins[NV_LANG_DATA])) {
     foreach ($nv_plugins[NV_LANG_DATA] as $_phook => $pdatahook) {
@@ -199,6 +210,9 @@ if (!empty($nv_plugins[NV_LANG_DATA])) {
                 $module_name = $_phook;
                 $hook_module = $_plugin[1];
                 $pid = $_plugin[2];
+                if ($_plugin[0] == 'includes/plugin/cdn_js_css_image.php') {
+                    $cdn_is_enabled = true;
+                }
                 require NV_ROOTDIR . '/' . $_plugin[0];
             }
         }
@@ -208,9 +222,21 @@ if (!empty($nv_plugins[NV_LANG_DATA])) {
 
 nv_apply_hook('', 'check_server');
 
-if (!in_array(NV_SERVER_NAME, $global_config['my_domains'], true)) {
-    nv_info_die($lang_global['error_404_title'], $lang_global['error_404_title'], $lang_global['error_404_content'], 400, '', '', '', '');
+if (defined('NV_ADMIN')) {
+    $global_config['cdn_url'] = $global_config['nv_static_url'] = $global_config['assets_cdn_url'] = '';
+} else {
+    set_cdn_urls($global_config, $cdn_is_enabled, $client_info['country']);
 }
+
+// NV_STATIC_URL - URL của host chứa các file tĩnh hoặc đường dẫn tương đối của site
+define('NV_STATIC_URL', (!empty($global_config['nv_static_url']) and empty($global_config['cdn_url'])) ? $global_config['nv_static_url'] . '/' : NV_BASE_SITEURL);
+// ASSETS_STATIC_URL - jsDelivr zone URL đến thư mục assets của dự án trên github.com hoặc đường dẫn tương đối đến thư mục assets của site
+define('ASSETS_STATIC_URL', !empty($global_config['assets_cdn_url']) ? $global_config['assets_cdn_url'] . 'assets' : NV_STATIC_URL . NV_ASSETS_DIR);
+// ASSETS_LANG_STATIC_URL - Cũng là ASSETS_STATIC_URL nhưng chỉ áp dụng cho các file javascript liên quan đến ngôn ngữ Anh, Pháp, Việt
+define('ASSETS_LANG_STATIC_URL', (in_array(NV_LANG_INTERFACE, ['en', 'fr', 'vi'], true)) ? ASSETS_STATIC_URL : NV_STATIC_URL . NV_ASSETS_DIR);
+// AUTO_MINIFIED - Tự thu nhỏ dung lượng file nếu thêm '.min' vào trước phần mở rộng .css, .js (Chỉ áp dụng khi mạng CDN jsDelivr được bật)
+define('AUTO_MINIFIED', (!empty($global_config['assets_cdn_url']) and in_array(NV_LANG_INTERFACE, ['en', 'fr', 'vi'], true)) ? '.min' : '');
+
 // Ket noi Cache
 if ($global_config['cached'] == 'memcached') {
     $nv_Cache = new NukeViet\Cache\Memcached(NV_MEMCACHED_HOST, NV_MEMCACHED_PORT, NV_LANG_DATA, NV_CACHE_PREFIX);
@@ -327,6 +353,8 @@ define('NV_LANGUAGE_GLOBALTABLE', $db_config['prefix'] . '_language');
 define('NV_CONFIG_GLOBALTABLE', $db_config['prefix'] . '_config');
 define('NV_CRONJOBS_GLOBALTABLE', $db_config['prefix'] . '_cronjobs');
 define('NV_NOTIFICATION_GLOBALTABLE', $db_config['prefix'] . '_notification');
+define('NV_PUSH_GLOBALTABLE', $db_config['prefix'] . '_push');
+define('NV_PUSH_STATUS_GLOBALTABLE', $db_config['prefix'] . '_push_status');
 
 define('NV_UPLOAD_GLOBALTABLE', $db_config['prefix'] . '_upload');
 define('NV_BANNERS_GLOBALTABLE', $db_config['prefix'] . '_banners');
@@ -340,6 +368,11 @@ define('NV_MODFUNCS_TABLE', NV_PREFIXLANG . '_modfuncs');
 define('NV_SEARCHKEYS_TABLE', NV_PREFIXLANG . '_searchkeys');
 define('NV_REFSTAT_TABLE', NV_PREFIXLANG . '_referer_stats');
 
+// Lấy tổng số thông báo đẩy chưa xem
+if (defined('NV_IS_AJAX') and $nv_Request->isset_request('__checkPush, __userid, __groups, _csrf', 'post')) {
+    require NV_ROOTDIR . '/includes/core/check_push.php';
+}
+
 $sql = 'SELECT lang, module, config_name, config_value FROM ' . NV_CONFIG_GLOBALTABLE . " WHERE lang='" . NV_LANG_DATA . "' or (lang='sys' AND (module='site' OR module='banners')) ORDER BY module ASC";
 $list = $nv_Cache->db($sql, '', 'settings');
 
@@ -351,6 +384,22 @@ foreach ($list as $row) {
     }
 }
 
+$global_config['site_int_phone'] = '';
+if (!empty($global_config['site_phone']) and preg_match('/^(.+)\[([0-9\*\#\+\-\.\,\;]+)\]$/', $global_config['site_phone'], $matches)) {
+    $global_config['site_phone'] = $matches[1];
+    $global_config['site_int_phone'] = $matches[2];
+}
+
+if (!empty($global_config['custom_configs'])) {
+    $custom_configs = json_decode($global_config['custom_configs'], true);
+    $global_config['custom_configs'] = [];
+    foreach ($custom_configs as $key => $val) {
+        $global_config['custom_configs'][$key] = is_array($val) ? $val[0] : $val;
+    }
+} else {
+    $global_config['custom_configs'] = [];
+}
+
 nv_apply_hook('', 'zalo_webhook');
 
 if (!empty($global_config['nv_csp_script_nonce'])) {
@@ -358,8 +407,8 @@ if (!empty($global_config['nv_csp_script_nonce'])) {
 }
 
 // Check https
-if (empty($sys_info['http_only']) and (($global_config['ssl_https'] == 1 or ($global_config['ssl_https'] == 2 and defined('NV_ADMIN'))) and (!isset($_SERVER['HTTPS']) or $_SERVER['HTTPS'] == 'off'))) {
-    nv_redirect_location('https://' . NV_SERVER_NAME . NV_SERVER_PORT . $_SERVER['REQUEST_URI']);
+if (empty($sys_info['http_only']) and (($global_config['ssl_https'] == 1 or ($global_config['ssl_https'] == 2 and defined('NV_ADMIN'))) and ($nv_Server->getOriginalProtocol() !== 'https'))) {
+    nv_redirect_location('https://' . $nv_Server->getOriginalHost() . $nv_Server->getOriginalPort() . $_SERVER['REQUEST_URI']);
 }
 
 if ($global_config['is_user_forum']) {
@@ -412,7 +461,7 @@ if (defined('NV_ADMIN')) {
 }
 
 // Cronjobs execute
-$global_config['cronjobs_next_time'] = (int)$global_config['cronjobs_last_time'] + (int)$global_config['cronjobs_interval'] * 60;
+$global_config['cronjobs_next_time'] = (int) $global_config['cronjobs_last_time'] + (int) $global_config['cronjobs_interval'] * 60;
 if ($global_config['cronjobs_launcher'] == 'server' and $nv_Request->isset_request('loadcron', 'get')) {
     if ($nv_Request->get_title('loadcron', 'get') == md5('cronjobs' . $global_config['sitekey']) and NV_CURRENTTIME >= $global_config['cronjobs_next_time']) {
         require NV_ROOTDIR . '/includes/core/cronjobs.php';
@@ -426,6 +475,21 @@ if ($global_config['cronjobs_launcher'] == 'system') {
     if (NV_CURRENTTIME >= $global_config['cronjobs_next_time']) {
         post_async(NV_BASE_SITEURL . 'index.php', ['__cronjobs' => 1]);
     }
+}
+
+// Gửi mail từ luồng truy vấn không đồng bộ
+if ($nv_Request->isset_request('__sendmail', 'post')) {
+    $file = $nv_Request->get_title('__sendmail', 'post', '');
+    if (preg_match('/^[a-zA-Z0-9]{8}$/', $file)) {
+        $md5file = md5($global_config['sitekey'] . $file);
+        if (file_exists(NV_ROOTDIR . '/' . NV_TEMP_DIR . '/' . $md5file)) {
+            $cts = file_get_contents(NV_ROOTDIR . '/' . NV_TEMP_DIR . '/' . $md5file);
+            $cts = json_decode($cts, true);
+            @unlink(NV_ROOTDIR . '/' . NV_TEMP_DIR . '/' . $md5file);
+            @nv_sendmail($cts['from'], $cts['to'], $cts['subject'], $cts['message'], $cts['files'], $cts['AddEmbeddedImage'], $cts['testmode'], $cts['cc'], $cts['bcc'], $cts['mailhtml'], $cts['custom_headers']);
+        }
+    }
+    exit(0);
 }
 
 // Quản lý thẻ meta, header các máy chủ tìm kiếm
@@ -469,58 +533,7 @@ unset($nv_check_update);
 
 nv_apply_hook('', 'modify_global_config');
 
-$cache_file = NV_LANG_DATA . '_smods_' . NV_CACHE_PREFIX . '.cache';
-if (($cache = $nv_Cache->getItem('modules', $cache_file)) != false) {
-    $sys_mods = unserialize($cache);
-} else {
-    $sys_mods = [];
-    try {
-        $result = $db->query('SELECT * FROM ' . NV_MODULES_TABLE . ' m LEFT JOIN ' . NV_MODFUNCS_TABLE . ' f ON m.title=f.in_module WHERE m.act = 1 ORDER BY m.weight, f.subweight');
-        while ($row = $result->fetch()) {
-            $m_title = $row['title'];
-            $f_name = $row['func_name'];
-            $f_alias = $row['alias'];
-            if (!isset($sys_mods[$m_title])) {
-                $sys_mods[$m_title] = [
-                    'module_file' => $row['module_file'],
-                    'module_data' => $row['module_data'],
-                    'module_upload' => $row['module_upload'],
-                    'module_theme' => $row['module_theme'],
-                    'custom_title' => $row['custom_title'],
-                    'site_title' => (empty($row['site_title'])) ? $row['custom_title'] : $row['site_title'],
-                    'admin_title' => (empty($row['admin_title'])) ? $row['custom_title'] : $row['admin_title'],
-                    'admin_file' => $row['admin_file'],
-                    'main_file' => $row['main_file'],
-                    'theme' => $row['theme'],
-                    'mobile' => $row['mobile'],
-                    'description' => $row['description'],
-                    'keywords' => $row['keywords'],
-                    'groups_view' => $row['groups_view'],
-                    'is_modadmin' => false,
-                    'admins' => $row['admins'],
-                    'rss' => $row['rss'],
-                    'sitemap' => $row['sitemap'],
-                    'is_search' => file_exists(NV_ROOTDIR . '/modules/' . $row['module_file'] . '/search.php') ? 1 : 0,
-                    'funcs' => []
-                ];
-            }
-            $sys_mods[$m_title]['funcs'][$f_alias] = [
-                'func_id' => $row['func_id'],
-                'func_name' => $f_name,
-                'show_func' => $row['show_func'],
-                'func_custom_name' => $row['func_custom_name'],
-                'func_site_title' => empty($row['func_site_title']) ? $row['func_custom_name'] : $row['func_site_title'],
-                'in_submenu' => $row['in_submenu']
-            ];
-            $sys_mods[$m_title]['alias'][$f_name] = $f_alias;
-        }
-        $cache = serialize($sys_mods);
-        $nv_Cache->setItem('modules', $cache_file, $cache);
-        unset($cache, $result);
-    } catch (PDOException $e) {
-        // trigger_error( $e->getMessage() );
-    }
-}
+$sys_mods = nv_sys_mods();
 
 define('PCLZIP_TEMPORARY_DIR', NV_ROOTDIR . '/' . NV_TEMP_DIR . '/');
 // Hook sector 2

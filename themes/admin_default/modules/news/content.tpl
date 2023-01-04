@@ -8,15 +8,57 @@
 </div>
 <!-- END: error -->
 
-<link rel="stylesheet" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css" />
-<link rel="stylesheet" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/select2/select2.min.css">
+<!-- BEGIN: restore_note -->
+<div class="alert alert-info">
+    <i class="fa fa-spin fa-spinner"></i> {LANG.history_recovering}
+</div>
+<!-- END: restore_note -->
 
-<form class="form-inline m-bottom confirm-reload" action="{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DATA}&{NV_NAME_VARIABLE}={MODULE_NAME}&amp;{NV_OP_VARIABLE}={OP}" enctype="multipart/form-data" method="post" onsubmit="return nv_validForm(this,'{MODULE_DATA}', '{ERROR_BODYTEXT}','{ERROR_CAT}');">
+<link rel="stylesheet" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css" />
+<link rel="stylesheet" href="{ASSETS_STATIC_URL}/js/select2/select2.min.css">
+
+<form id="form-news-content" class="form-inline m-bottom confirm-reload" action="{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DATA}&amp;{NV_NAME_VARIABLE}={MODULE_NAME}&amp;{NV_OP_VARIABLE}={OP}" enctype="multipart/form-data" method="post" onsubmit="return nv_validForm(this,'{MODULE_DATA}', '{ERROR_BODYTEXT}','{ERROR_CAT}');">
     <div class="row">
-        <div class="alert alert-danger" id="show_error" style="display: none">
-
-        </div>
+        <div class="alert alert-danger" id="show_error" style="display: none"></div>
         <div class="col-sm-24 col-md-18">
+            <!-- BEGIN: report -->
+            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                <div class="panel panel-red">
+                    <a class="panel-heading{REPORT.collapsed}"  id="heading-reportlist" role="tab" data-toggle="collapse" data-parent="#accordion" href="#collapse-reportlist" aria-expanded="{REPORT.expanded}" aria-controls="collapse-reportlist">
+                    <i class="fa fa-exclamation-triangle"></i> {LANG.report} (<strong>{REPORT.count}</strong>)
+                    </a>
+                    <div id="collapse-reportlist" class="panel-collapse collapse{REPORT.in}" role="tabpanel" aria-labelledby="heading-reportlist">
+                        <div class="list-report" data-url="{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DATA}&amp;{NV_NAME_VARIABLE}={MODULE_NAME}&amp;{NV_OP_VARIABLE}=report" data-del-confirm="{LANG.report_del_confirm}">
+                            <!-- BEGIN: loop -->
+                            <div class="list-report-item item" data-id="{REPORT_DETAILS.id}">
+                                <a class="report-title{REPORT_DETAILS.collapsed}" data-toggle="collapse" href="#report-{REPORT_DETAILS.id}" aria-expanded="{REPORT_DETAILS.expanded}" aria-controls="report-{REPORT_DETAILS.id}">{REPORT_DETAILS.orig_content_short}</a>
+                                <div class="report-content collapse{REPORT_DETAILS.in}" id="report-{REPORT_DETAILS.id}">
+                                    <div class="post_info">
+                                        <span>{REPORT_DETAILS.post_info}</span>
+                                        </div>
+                                    <div class="orig_content_sector">
+                                        <label><strong>{LANG.error_text}</strong></label>
+                                        <div class="orig_content">{REPORT_DETAILS.orig_content}</div>
+                                    </div>
+                                    <!-- BEGIN: repl_content -->
+                                    <div class="repl_content_sector">
+                                        <label><strong>{LANG.proposal_text}</strong></label>
+                                        <div class="repl_content">{REPORT_DETAILS.repl_content}</div>
+                                    </div>
+                                    <!-- END: repl_content -->
+                                    <div class="post_action text-right">
+                                        <button type="button" class="btn btn-sm btn-danger report_del_action">{GLANG.delete}</button>
+                                        <button type="button" class="btn btn-sm btn-danger report_del_mail_action">{LANG.report_delete}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END: loop -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END: report -->
+
             <table class="table table-striped table-bordered">
                 <col class="w200" />
                 <col />
@@ -288,9 +330,28 @@
                                 <td>
                                     <div class="help-block">
                                         {GLANG.length_characters}:<span id="descriptionlength" class="red">0</span>. {GLANG.description_suggest_max}
-                                    </div> <textarea id="description" name="description" class="form-control w500" rows="5">{rowcontent.description}</textarea>
+                                    </div>
+                                    <textarea id="description" name="description" class="form-control w500" rows="5">{rowcontent.description}</textarea>
                                 </td>
                             </tr>
+                            <!-- BEGIN: voices -->
+                            <tr>
+                                <td><strong>{LANG.content_voice}:</strong></td>
+                                <td>
+                                    <!-- BEGIN: voice -->
+                                    <div class="m-bottom">
+                                        <div><label for="voice_{VOICE.id}">{VOICE.title}</label></div>
+                                        <div class="input-group witdh-100p">
+                                            <input class="form-control" type="text" id="voice_{VOICE.id}" name="voice_{VOICE.id}" value="{VOICE.value}">
+                                            <span class="input-group-btn">
+                                                <button data-toggle="pickaudio" data-id="{VOICE.id}" type="button" class="btn btn-default"><i class="fa fa-file-audio-o" aria-hidden="true"></i></button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <!-- END: voice -->
+                                </td>
+                            </tr>
+                            <!-- END: voices -->
                         </tbody>
                     </table>
                 </div>
@@ -374,6 +435,8 @@
         <input type="hidden" value="{ISCOPY}" name="copy" />
         <input type="hidden" value="{rowcontent.id}" name="id" />
         <input type="hidden" value="{rowcontent.referer}" name="referer">
+        <input type="hidden" value="{RESTORE_ID}" name="restore">
+        <input type="hidden" value="{RESTORE_HASH}" name="restorehash">
         <!-- BEGIN:status_save -->
         <input class="btn btn-primary submit-post" name="statussave" type="submit" value="{LANG.save}" />
         <!-- END:status_save -->
@@ -413,12 +476,26 @@
     <!-- BEGIN: holdon_edit -->
     CFG.is_edit_news = true;
     <!-- END: holdon_edit -->
+    <!-- BEGIN: restore_auto -->
+    $(window).on('load', function() {
+        setTimeout(function() {
+            var form = $('#form-news-content');
+            if ($('[name="status1"]', form).length) {
+                $('[name="status1"]', form).trigger('click');
+            } else if ($('[name="statussave"]', form).length) {
+                $('[name="statussave"]', form).trigger('click');
+            } else {
+                $('[type="submit"]:first', form).trigger('click');
+            }
+        }, 2000);
+    });
+    <!-- END: restore_auto -->
 </script>
-<script src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/select2/select2.min.js"></script>
-<script src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/select2/i18n/{NV_LANG_INTERFACE}.js"></script>
-<script src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
-<script src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.cookie.js"></script>
+<script src="{ASSETS_STATIC_URL}/js/select2/select2.min.js"></script>
+<script src="{ASSETS_LANG_STATIC_URL}/js/select2/i18n/{NV_LANG_INTERFACE}.js"></script>
+<script src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
+<script src="{ASSETS_STATIC_URL}/js/jquery/jquery.cookie.js"></script>
 <script src="{NV_BASE_SITEURL}themes/admin_default/js/news_content.js"></script>
 <!-- END:main -->
 

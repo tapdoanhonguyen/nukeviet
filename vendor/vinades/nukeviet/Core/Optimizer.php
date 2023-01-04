@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -61,10 +61,11 @@ class Optimizer
     /**
      * process()
      *
-     * @param bool $jquery
+     * @param bool  $jquery
+     * @param array $custom_preloads
      * @return string
      */
-    public function process($jquery = true)
+    public function process($jquery = true, $custom_preloads = [])
     {
         $conditionRegex = "/<\!--\[if([^\]]+)\].*?\[endif\]-->/is";
         $this->_content = preg_replace_callback($conditionRegex, [$this, 'conditionCallback'], $this->_content);
@@ -73,22 +74,26 @@ class Optimizer
         $_linkHref = [];
         $_preload = '';
 
-        if ($this->is_http2 and $this->resource_preload === 1) {
-            $this->headerPreloadItems[NV_STATIC_URL . NV_ASSETS_DIR . '/fonts/fontawesome-webfont.woff2'] = '<' . NV_STATIC_URL . NV_ASSETS_DIR . '/fonts/fontawesome-webfont.woff2>; rel=preload; as=font; crossorigin';
-            $this->headerPreloadItems[NV_STATIC_URL . 'themes/default/fonts/NukeVietIcons.woff2'] = '<' . NV_STATIC_URL . 'themes/default/fonts/NukeVietIcons.woff2>; rel=preload; as=font; crossorigin';
-        } elseif ($this->resource_preload === 2) {
-            $_preload .= '<link rel="preload" as="font" href="' . NV_STATIC_URL . NV_ASSETS_DIR . '/fonts/fontawesome-webfont.woff2" type="font/woff2" crossorigin>' . $this->eol;
-            $_preload .= '<link rel="preload" as="font" href="' . NV_STATIC_URL . 'themes/default/fonts/NukeVietIcons.woff2" type="font/woff2" crossorigin>' . $this->eol;
+        if (!empty($custom_preloads)) {
+            foreach ($custom_preloads as $custom_preload) {
+                if (!empty($custom_preload['as']) and !empty($custom_preload['href'])) {
+                    if ($this->is_http2 and $this->resource_preload === 1) {
+                        $this->headerPreloadItems[$custom_preload['href']] = '<' . $custom_preload['href'] . '>; rel=preload; as=' . $custom_preload['as'] . (!empty($custom_preload['type']) ? '; type=' . $custom_preload['type'] : '') . (!empty($custom_preload['crossorigin']) ? '; crossorigin' : '');
+                    } elseif ($this->resource_preload === 2) {
+                        $_preload .= '<link rel="preload" as="' . $custom_preload['as'] . '" href="' . $custom_preload['href'] . '"' . (!empty($custom_preload['type']) ? ' type="' . $custom_preload['type'] . '"' : '') . (!empty($custom_preload['crossorigin']) ? ' crossorigin' : '') . '>' . $this->eol;
+                    }
+                }
+            }
         }
 
         // Xác định biến này để chỉ xuất cứng jquery nếu như Buffer là toàn trang, đảm bảo không lỗi khi load ajax lại xuất tiếp jquery ra.
         $_isFullBuffer = preg_match('/\<\/body\>/', $this->_content);
         if ($_isFullBuffer and $jquery) {
-            $_jsAfter = '<script src="' . NV_STATIC_URL . NV_ASSETS_DIR . '/js/jquery/jquery.min.js"></script>' . $this->eol;
+            $_jsAfter = '<script src="' . ASSETS_STATIC_URL . '/js/jquery/jquery.min.js"></script>' . $this->eol;
             if ($this->is_http2 and $this->resource_preload === 1) {
-                $this->headerPreloadItems[NV_STATIC_URL . NV_ASSETS_DIR . '/js/jquery/jquery.min.js'] = '<' . NV_STATIC_URL . NV_ASSETS_DIR . '/js/jquery/jquery.min.js>; rel=preload; as=script';
+                $this->headerPreloadItems[ASSETS_STATIC_URL . '/js/jquery/jquery.min.js'] = '<' . ASSETS_STATIC_URL . '/js/jquery/jquery.min.js>; rel=preload; as=script';
             } elseif ($this->resource_preload === 2) {
-                $_preload .= '<link rel="preload" as="script" href="' . NV_STATIC_URL . NV_ASSETS_DIR . '/js/jquery/jquery.min.js" type="text/javascript">' . $this->eol;
+                $_preload .= '<link rel="preload" as="script" href="' . ASSETS_STATIC_URL . '/js/jquery/jquery.min.js" type="text/javascript">' . $this->eol;
             }
         } else {
             $_jsAfter = '';
@@ -325,7 +330,7 @@ class Optimizer
     private function jsCallback($matches)
     {
         if (preg_match('/<\s*\bscript\b([^>]*)data\-show\=["|\']inline["|\']([^>]*)>(.*)$/isu', $matches[0], $m)) {
-            return ('<script' . rtrim($m[1]) . $m[2] . '>' . $m[3]);
+            return '<script' . rtrim($m[1]) . $m[2] . '>' . $m[3];
         }
         $this->_jsMatches[] = $matches[0];
         $num = $this->_jsCount;

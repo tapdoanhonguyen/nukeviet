@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -195,6 +195,38 @@ $installMods['users'] = [
             'theme_mobile' => 'main'
         ],
         'oauth' => []
+    ]
+];
+
+$installMods['api'] = [
+    'module_file' => 'api',
+    'module_theme' => 'api',
+    'custom_title' => $install_lang['modules']['api'],
+    'admin_title' => $install_lang['modules']['api_for_acp'],
+    'main_file' => 1,
+    'admin_file' => 1,
+    'groups_view' => '6',
+    'funcs' => [
+        'main' => [
+            'show_func' => 1,
+            'theme_default' => 'main',
+            'theme_mobile' => 'main'
+        ]
+    ]
+];
+
+$installMods['push'] = [
+    'custom_title' => $install_lang['modules']['push'],
+    'admin_title' => $install_lang['modules']['push_for_acp'],
+    'main_file' => 1,
+    'admin_file' => 1,
+    'groups_view' => '4',
+    'funcs' => [
+        'main' => [
+            'show_func' => 1,
+            'theme_default' => 'left-main',
+            'theme_mobile' => 'main'
+        ]
     ]
 ];
 
@@ -707,6 +739,15 @@ $blockGroups = [
         ],
         'PERSONALAREA' => [
             [
+                'module' => 'push',
+                'file_name' => 'global.push.php',
+                'title' => $install_lang['blocks_groups']['push']['global.push'],
+                'template' => 'no_title',
+                'active' => '1',
+                'groups_view' => '6',
+                'all_func' => 1
+            ],
+            [
                 'module' => 'users',
                 'file_name' => 'global.user_button.php',
                 'title' => $install_lang['blocks_groups']['users']['global.user_button'],
@@ -799,6 +840,15 @@ $blockGroups = [
                 'groups_view' => '6',
                 'all_func' => 1,
                 'config' => 'a:2:{s:6:"menuid";i:1;s:12:"title_length";i:0;}'
+            ],
+            [
+                'module' => 'push',
+                'file_name' => 'global.push.php',
+                'title' => $install_lang['blocks_groups']['push']['global.push'],
+                'template' => 'no_title',
+                'active' => '1',
+                'groups_view' => '6',
+                'all_func' => 1
             ],
             [
                 'module' => 'users',
@@ -993,7 +1043,7 @@ if (!empty($theme_mobile)) {
  * Nhap du lieu cho table: nv4_vi_blocks_groups
  */
 $db->query('TRUNCATE TABLE ' . $db_config['prefix'] . '_' . $lang_data . '_blocks_groups');
-$sth = $db->prepare('INSERT INTO ' . $db_config['prefix'] . '_' . $lang_data . '_blocks_groups (bid, theme, module, file_name, title, link, template, position, exp_time, active, groups_view, all_func, weight, config) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$sth = $db->prepare('INSERT INTO ' . $db_config['prefix'] . '_' . $lang_data . '_blocks_groups (bid, theme, module, file_name, title, link, template, position, dtime_details, active, groups_view, all_func, weight, config) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
 $_bid = 0;
 $array_weight_block = [];
@@ -1014,7 +1064,7 @@ foreach ($blockGroups as $theme => $vals) {
                     !empty($bl['link']) ? $bl['link'] : '',
                     $bl['template'],
                     '[' . $pos . ']',
-                    0,
+                    '[]',
                     $bl['active'],
                     $bl['groups_view'],
                     !empty($bl['all_func']) ? 1 : 0,

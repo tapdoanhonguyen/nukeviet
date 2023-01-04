@@ -247,6 +247,48 @@ function download() {
     $("iframe#Fdownload").attr("src", nv_module_url + "dlimg&path=" + fullPath + "&img=" + selFile);
 }
 
+// Tạo WEBP
+function webpconvert() {
+    var selFile = $("input[name=selFile]").val();
+    var selFileData = $("img[title='" + selFile + "']").attr("name").split("|");
+
+    fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
+    $.ajax({
+        type: "POST",
+        url: nv_module_url + "webpconvert",
+        data: "path=" + fullPath + "&img=" + selFile,
+        dataType: 'json',
+        success: function(e) {
+            if (e.status == 'error') {
+                alert(e.mess);
+            } else if (e.status == 'OK') {
+                LFILE.reload(fullPath, e.file);
+            }
+        }
+    })
+}
+
+// Nén hình
+function compressimage() {
+    var selFile = $("input[name=selFile]").val();
+    var selFileData = $("img[title='" + selFile + "']").attr("name").split("|");
+
+    fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
+    $.ajax({
+        type: "POST",
+        url: nv_module_url + "compressimage",
+        data: "path=" + fullPath + "&img=" + selFile,
+        dataType: 'json',
+        success: function(e) {
+            if (e.status == 'error') {
+                alert(e.mess);
+            } else if (e.status == 'OK') {
+                LFILE.reload(fullPath, e.file);
+            }
+        }
+    })
+}
+
 // Xem thong tin chi tiet
 function preview() {
     $("div.dynamic").text("");
@@ -260,16 +302,10 @@ function preview() {
     var selFileData = img.attr("name").split("|");
     fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
 
-    if (selFileData[3] == "image" || selFileData[2] == "swf") {
+    if (selFileData[3] == "image") {
         var size = calSize(selFileData[0], selFileData[1], 188, 120);
         html += selFileData[0] + " x " + selFileData[1] + " pixels (" + selFileData[4] + ")<br />";
-        selFileData[3] == "image" ? $("div#fileView").html('<img width="' + size[0] + '" height="' + size[1] + '" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" />') : $("#fileView").flash({
-            src: nv_base_siteurl + fullPath + "/" + selFile,
-            width: size[0],
-            height: size[1]
-        }, {
-            version: 8
-        });
+        $("div#fileView").html('<img width="' + size[0] + '" height="' + size[1] + '" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" />');
         if (selFileData[3] == "image") {
             $("div#fileView").addClass("zoomin");
             $("div#fileView img").click(function() {
@@ -326,6 +362,39 @@ function preview() {
         close: function() {
             $('#FileRelativePathBtn').tooltip('destroy');
             $('#FileAbsolutePathBtn').tooltip('destroy');
+        }
+    }).dialog("open");
+}
+
+// Quality change
+function qualitychange() {
+    $("div.dynamic").text("");
+    $("div#qualitychangeObj select[name=quality]").val('');
+
+    var selFile = $("input[name=selFile]").val();
+    var img = $("img[title='" + selFile + "']");
+    var selFileData = img.attr("name").split("|");
+    DisSize = calSize(selFileData[0], selFileData[1], 360, 230);
+    fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
+
+    $("div#imageView").html('<img width="' + DisSize[0] + '" height="' + DisSize[1] + '" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" />');
+    $("div#imageView").addClass("zoomin");
+    $("div#imageView img").click(function() {
+        $("#sitemodal").find(".modal-title").html(selFile);
+        $("#sitemodal").find(".modal-body").html('<div class="text-center"><img class="img-responsive" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" /></div>');
+        $("#sitemodal").modal();
+    });
+    $('#OrigImageInfo').text(LANG.original_filesize + ": " + selFileData[4]);
+    $("#imageInfoDetail").text(LANG.filesize + ": " + selFileData[4]);
+
+    $("div#qualitychangeObj").dialog({
+        autoOpen: false,
+        width: 400,
+        modal: true,
+        position: {
+            my: "center",
+            at: "center",
+            of: window
         }
     }).dialog("open");
 }
@@ -547,6 +616,17 @@ function fileMouseup(file, e) {
                     html += '<li id="create"><em class="fa fa-lg ' + ICON.create + '">&nbsp;</em>' + LANG.upload_createimage + '</li>';
                     html += '<li id="cropfile"><em class="fa fa-lg ' + ICON.filecrop + '">&nbsp;</em>' + LANG.crop + '</li>';
                     html += '<li id="rotatefile"><em class="fa fa-lg ' + ICON.filerotate + '">&nbsp;</em>' + LANG.rotate + '</li>';
+                }
+            }
+
+            if ($.inArray(fileExt, ['jpg', 'jpeg', 'png']) !== -1 && !isMultiple) {
+                html += '<li id="webpconvert"><em class="fa fa-lg ' + ICON.webpconvert + '">&nbsp;</em>' + LANG.webpconvert + '</li>';
+            }
+
+            if ($.inArray(fileExt, ['jpg', 'jpeg', 'png', 'webp']) !== -1 && !isMultiple) {
+                html += '<li id="qualitychange"><em class="fa fa-lg ' + ICON.qualitychange + '">&nbsp;</em>' + LANG.qualitychange + '</li>';
+                if (nv_compressimage_active) {
+                    html += '<li id="compressimage"><em class="fa fa-lg ' + ICON.compressimage + '">&nbsp;</em>' + LANG.compressimage + '</li>';
                 }
             }
 
@@ -1035,6 +1115,9 @@ ICON.filecrop = 'fa-crop';
 ICON.filerotate = 'fa-repeat';
 ICON.addlogo = 'fa-file-image-o';
 ICON.spin = 'fa-spin';
+ICON.webpconvert = 'fa-file-image-o';
+ICON.compressimage = 'fa-compress';
+ICON.qualitychange = 'fa-sort-amount-desc';
 
 $(".vchange").change(function() {
     var a = $("span#foldervalue").attr("title"),
@@ -1401,6 +1484,72 @@ $("input[name=newPathOK]").click(function() {
                 }
             }
         });
+    }
+});
+
+// Xem trước khi thay đổi chất lượng ảnh
+$('#qualitychangeObj select[name=quality]').on('change', function(e) {
+    e.preventDefault();
+    var selFile = $("input[name=selFile]").val(),
+        selFileData = $("img[title='" + selFile + "']").attr("name").split("|"),
+        qty = $(this).val();
+    fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
+    DisSize = calSize(selFileData[0], selFileData[1], 360, 230);
+    if (qty == '') {
+        var img = $('<img width="' + DisSize[0] + '" height="' + DisSize[1] + '" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" />');
+        img.on('click', function() {
+            $("#sitemodal").find(".modal-title").html(selFile);
+            $("#sitemodal").find(".modal-body").html('<div class="text-center"><img class="img-responsive" src="' + nv_base_siteurl + fullPath + "/" + selFile + '?' + selFileData[8] + '" /></div>');
+            $("#sitemodal").modal();
+        });
+        $("div#imageView").html(img);
+        $("#imageInfoDetail").text(LANG.filesize + ": " + selFileData[4]);
+    } else {
+        $.ajax({
+            type: "POST",
+            url: nv_module_url + "qualitychange",
+            data: "path=" + fullPath + "&img=" + selFile + '&quality=' + qty + '&preview=1',
+            dataType: 'json',
+            success: function(e) {
+                if (e.status == 'error') {
+                    alert(e.mess);
+                } else if (e.status == 'OK') {
+                    var img = $('<img width="' + DisSize[0] + '" height="' + DisSize[1] + '" src="' + e.imgdata + '" />');
+                    img.on('click', function() {
+                        $("#sitemodal").find(".modal-title").html(selFile + ' (' + LANG.quality + ': ' + qty + ')');
+                        $("#sitemodal").find(".modal-body").html('<div class="text-center"><img class="img-responsive" src="' + e.imgdata + '" /></div>');
+                        $("#sitemodal").modal();
+                    });
+                    $("div#imageView").html(img);
+                    $("#imageInfoDetail").text(LANG.filesize + ": " + e.imglength);
+                }
+            }
+        })
+    }
+});
+
+// Lưu thay đổi chất lượng ảnh
+$('#qualitychangeOK').on('click', function(e) {
+    e.preventDefault();
+    var selFile = $("input[name=selFile]").val(),
+        selFileData = $("img[title='" + selFile + "']").attr("name").split("|"),
+        qty = $('#qualitychangeObj select[name=quality]').val();
+    fullPath = (selFileData[7] == "") ? $("span#foldervalue").attr("title") : selFileData[7];
+    if (qty != '') {
+        $.ajax({
+            type: "POST",
+            url: nv_module_url + "qualitychange",
+            data: "path=" + fullPath + "&img=" + selFile + '&quality=' + qty,
+            dataType: 'json',
+            success: function(e) {
+                if (e.status == 'error') {
+                    alert(e.mess);
+                } else if (e.status == 'OK') {
+                    LFILE.reload(fullPath, e.file);
+                    $("div#qualitychangeObj").dialog("close");
+                }
+            }
+        })
     }
 });
 
@@ -1858,10 +2007,9 @@ var NVUPLOAD = {
             var folderPath = $("span#foldervalue").attr("title");
 
             NVUPLOAD.uploader = new plupload.Uploader({
-                runtimes: 'html5,flash,silverlight,html4',
+                runtimes: 'html5,silverlight,html4',
                 browse_button: 'upload-local',
                 url: nv_module_url + "upload&path=" + folderPath + "&random=" + nv_randomNum(10),
-                flash_swf_url: nv_base_siteurl + 'assets/js/plupload/Moxie.swf',
                 silverlight_xap_url: nv_base_siteurl + 'assets/js/plupload/Moxie.xap',
                 drop_element: 'upload-content',
                 file_data_name: 'upload',
@@ -2429,6 +2577,15 @@ var NVCMENU = {
         },
         deletefolder: function() {
             deletefolder()
+        },
+        webpconvert: function() {
+            webpconvert()
+        },
+        compressimage: function() {
+            compressimage()
+        },
+        qualitychange: function() {
+            qualitychange()
         }
     },
     init: function() {

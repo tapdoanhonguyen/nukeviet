@@ -1,7 +1,7 @@
 <!-- BEGIN: main -->
-<link type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
+<link type="text/css" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
 
 <!-- BEGIN: error_save -->
 <div class="alert alert-danger">{ERROR_SAVE}</div>
@@ -188,6 +188,16 @@
                                                 <!-- END: end_url_variable -->
                                             </tbody>
                                         </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{LANG.passshow_button}</strong></td>
+                                    <td>
+                                        <select class="form-control w300" name="passshow_button">
+                                            <!-- BEGIN: passshow_button -->
+                                            <option value="{OPT.val}"{OPT.sel}>{OPT.name}</option>
+                                            <!-- END: passshow_button -->
+                                        </select>
                                     </td>
                                 </tr>
                             </tbody>
@@ -666,7 +676,8 @@
                                 <div class="row">
                                     <div class="col-sm-18 col-md-14 col-lg-10 col-sm-offset-6">
                                         <input type="hidden" name="checkss" value="{CHECKSS}" />
-                                        <input type="submit" value="{LANG.banip_confirm}" name="submit" class="btn btn-primary">
+                                        <input type="hidden" name="save" value="1" />
+                                        <input type="submit" value="{LANG.banip_confirm}" class="btn btn-primary">
                                     </div>
                                 </div>
                             </div>

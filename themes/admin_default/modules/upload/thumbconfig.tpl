@@ -1,7 +1,7 @@
 <!-- BEGIN: main -->
 <div class="alert alert-info">{LANG.thumb_note}</div>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.validate.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jquery.validate.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
 <form action="{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DATA}&{NV_NAME_VARIABLE}={MODULE_NAME}&amp;{NV_OP_VARIABLE}={OP}" method="post" id="frm">
     <div class="table-responsive">
         <table class="table table-striped table-bordered table-hover">
@@ -16,7 +16,7 @@
             </thead>
             <tfoot>
                 <tr>
-                    <td colspan="5" class="text-center"><input type="submit" value="{LANG.pubdate}" name="submit" class="btn btn-primary"/></td>
+                    <td colspan="5" class="text-center"><input type="hidden" name="save" value="1"><input type="submit" value="{LANG.pubdate}" class="btn btn-primary"/></td>
                 </tr>
             </tfoot>
             <tbody>

@@ -46,6 +46,10 @@ class ApiResult
     const CODE_MISSING_LANG = '0018';
     const CODE_MISSING_IP = '0019';
     const CODE_MISSING_TIME = '0020';
+    const CODE_ADMIN_SUSPEND = '0021';
+    const CODE_REQUEST_LIMIT_EXCEEDED = '0022';
+    const CODE_WRONG_TIME = '0023';
+    const CODE_QUOTA_EXHAUSTED = '0024';
 
     private const CODE_PATTERN = '/^[0-9]{4}$/';
 
@@ -153,7 +157,7 @@ class ApiResult
      */
     public function getResult()
     {
-        return json_encode($this->result);
+        return json_encode($this->result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     /**
@@ -164,10 +168,10 @@ class ApiResult
      */
     public function returnResult()
     {
-        if (!function_exists('nv_jsonOutput')) {
-            throw new Exception('Missing function nv_jsonOutput!!!', self::CODE_MISSING_FUNCTION);
+        if (!function_exists('nv_htmlOutput')) {
+            throw new Exception('Missing function nv_htmlOutput!!!', self::CODE_MISSING_FUNCTION);
         }
 
-        return nv_jsonOutput($this->result);
+        return nv_htmlOutput(json_encode($this->result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), 'json');
     }
 }

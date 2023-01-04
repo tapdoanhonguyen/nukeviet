@@ -29,6 +29,8 @@ if (defined('NV_IS_GODADMIN')) {
     $allow_func[] = 'plugin';
     $allow_func[] = 'variables';
     $allow_func[] = 'ssettings';
+    $allow_func[] = 'cdn_backendhost';
+    $allow_func[] = 'custom';
 }
 
 $menu_top = [
@@ -64,10 +66,10 @@ function nv_admin_add_theme($contents)
     $xtpl = new XTemplate('cronjobs_add.tpl', NV_ROOTDIR . '/themes/' . $global_config['module_theme'] . '/modules/' . $module_file);
     $xtpl->assign('LANG', $lang_module);
 
-    $my_head .= '<link type="text/css" href="' . NV_STATIC_URL . NV_ASSETS_DIR . "/js/jquery-ui/jquery-ui.min.css\" rel=\"stylesheet\" />\n";
+    $my_head .= '<link type="text/css" href="' . ASSETS_STATIC_URL . "/js/jquery-ui/jquery-ui.min.css\" rel=\"stylesheet\" />\n";
 
-    $my_footer .= '<script type="text/javascript" src="' . NV_STATIC_URL . NV_ASSETS_DIR . "/js/jquery-ui/jquery-ui.min.js\"></script>\n";
-    $my_footer .= '<script type="text/javascript" src="' . NV_STATIC_URL . NV_ASSETS_DIR . '/js/language/jquery.ui.datepicker-' . NV_LANG_INTERFACE . ".js\"></script>\n";
+    $my_footer .= '<script type="text/javascript" src="' . ASSETS_STATIC_URL . "/js/jquery-ui/jquery-ui.min.js\"></script>\n";
+    $my_footer .= '<script type="text/javascript" src="' . ASSETS_LANG_STATIC_URL . '/js/language/jquery.ui.datepicker-' . NV_LANG_INTERFACE . ".js\"></script>\n";
 
     if ($contents['is_error']) {
         $xtpl->parse('main.error');
@@ -162,17 +164,33 @@ function main_theme($contents)
             'edit' => empty($values['edit']) ? [] : $values['edit'],
             'disable' => empty($values['disable']) ? [] : $values['disable'],
             'delete' => empty($values['delete']) ? [] : $values['delete'],
-            'id' => $id
+            'id' => $id,
+            'last_time_title' => $values['last_time_title'],
+            'last_result_title' => $values['last_result_title']
         ]);
 
-        if (!empty($values['edit'][0])) {
-            $xtpl->parse('main.crj.edit');
+        if (empty($values['act'])) {
+            $xtpl->parse('main.crj.inactivate');
         }
-        if (!empty($values['disable'][0])) {
-            $xtpl->parse('main.crj.disable');
+
+        if (!empty($values['last_time'])) {
+            $xtpl->parse('main.crj.last_time.result' . $values['last_result']);
+            $xtpl->parse('main.crj.last_time');
+        } else {
+            $xtpl->parse('main.crj.never');
         }
-        if (!empty($values['delete'][0])) {
-            $xtpl->parse('main.crj.delete');
+
+        if (!empty($values['edit'][0]) or !empty($values['disable'][0]) or !empty($values['delete'][0])) {
+            if (!empty($values['edit'][0])) {
+                $xtpl->parse('main.crj.action.edit');
+            }
+            if (!empty($values['disable'][0])) {
+                $xtpl->parse('main.crj.action.disable');
+            }
+            if (!empty($values['delete'][0])) {
+                $xtpl->parse('main.crj.action.delete');
+            }
+            $xtpl->parse('main.crj.action');
         }
 
         foreach ($values['detail'] as $key => $value) {

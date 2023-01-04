@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -31,9 +31,12 @@ $global_config['admfirewall'] = 0;
 $global_config['admin_2step_default'] = 'code';
 $global_config['admin_2step_opt'] = 'code';
 $global_config['admin_check_pass_time'] = 1800;
+$global_config['admin_login_duration'] = 10800;
 $global_config['admin_user_logout'] = 0;
+$global_config['admin_XSSsanitize'] = 1;
 $global_config['allow_null_origin'] = 0;
 $global_config['allow_sitelangs'] = ['vi'];
+$global_config['assets_cdn'] = 1;
 $global_config['authors_detail_main'] = 0;
 $global_config['autocheckupdate'] = 1;
 $global_config['autoupdatetime'] = 24;
@@ -63,9 +66,9 @@ $global_config['dump_interval'] = 1;
 $global_config['end_url_variables'] = [];
 $global_config['error_send_email'] = 'admin@nukeviet.vn';
 $global_config['error_set_logs'] = 1;
-$global_config['file_allowed_ext'] = ['adobe','archives','audio','documents','flash','images','real','video'];
-$global_config['forbid_extensions'] = ['php','php3','php4','php5','phtml','inc'];
-$global_config['forbid_mimes'] = [];
+$global_config['file_allowed_ext'] = ['adobe','archives','audio','documents','images','real','video'];
+$global_config['forbid_extensions'] = ['htm','html','htmls','js','php','php3','php4','php5','phtml','inc'];
+$global_config['forbid_mimes'] = ['application/ecmascript','application/javascript','application/x-javascript','text/ecmascript','text/html','text/javascript','application/x-httpd-php','application/x-httpd-php-source','application/php','application/x-php','text/php','text/x-php'];
 $global_config['ftp_check_login'] = 0;
 $global_config['ftp_path'] = '/';
 $global_config['ftp_port'] = 21;
@@ -84,6 +87,7 @@ $global_config['login_time_tracking'] = 5;
 $global_config['max_requests_300'] = 150;
 $global_config['max_requests_60'] = 40;
 $global_config['my_domains'] = 'nukeviet.vn';
+$global_config['notice_log_filename'] = 'notice_log';
 $global_config['notification_active'] = 1;
 $global_config['notification_autodel'] = 15;
 $global_config['nv_auto_resize'] = 1;
@@ -91,6 +95,7 @@ $global_config['nv_display_errors_list'] = 1;
 $global_config['nv_max_size'] = 2097152;
 $global_config['nv_overflow_size'] = 0;
 $global_config['nv_static_url'] = '';
+$global_config['passshow_button'] = 0;
 $global_config['proxy_blocker'] = 0;
 $global_config['read_type'] = 0;
 $global_config['recaptcha_secretkey'] = '';
@@ -114,7 +119,9 @@ $global_config['site_timezone'] = 'byCountry';
 $global_config['spadmin_add_admin'] = 1;
 $global_config['str_referer_blocker'] = 0;
 $global_config['timestamp'] = 0;
+$global_config['static_noquerystring'] = 0;
 $global_config['two_step_verification'] = 0;
+$global_config['unsign_vietwords'] = 1;
 $global_config['upload_alt_require'] = 1;
 $global_config['upload_auto_alt'] = 1;
 $global_config['upload_checking_mode'] = 'strong';
@@ -122,6 +129,7 @@ $global_config['upload_chunk_size'] = 0;
 $global_config['useactivate'] = 2;
 $global_config['users_special'] = 0;
 $global_config['version'] = '4.5.00 OpenBeta 1';
+$global_config['XSSsanitize'] = 1;
 $global_config['zaloWebhookIPs'] = [];
 $global_config['check_rewrite_file'] = 1;
 $global_config['allow_request_mods'] = ['get','post','cookie','session','request','env','server'];

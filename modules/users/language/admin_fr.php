@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -543,3 +543,12 @@ $lang_module['security_alert_2stepoff'] = 'Votre compte <strong>%s</strong> vien
 $lang_module['email_dot_equivalent'] = 'Les e-mails avec un point avant le @ sont la version d\'un e-mail sans point';
 $lang_module['forcedrelogin'] = 'Forcer la reconnexion';
 $lang_module['forcedrelogin_note'] = 'L\'utilisateur s\'est déconnecté';
+$lang_module['login_name_type'] = 'Type de nom de connexion';
+$lang_module['login_name_type_1'] = 'Nom d\'utilisateur';
+$lang_module['login_name_type_2'] = 'Email';
+$lang_module['login_name_type_3'] = 'Nom d\'utilisateur ou email';
+$lang_module['censorship'] = 'La censure';
+$lang_module['leave_blank_note'] = 'Laisser vide si vous utilisez la valeur saisie par le déclarant';
+$lang_module['register_active_time'] = 'Temps d\'attente d\'activation du compte';
+$lang_module['register_active_time_note'] = 'Si la valeur est supérieure à 0, le compte en attente d\'activation sera supprimé après cette période. Si c\'est 0, le compte en attente d\'activation ne sera pas supprimé automatiquement';
+$lang_module['hours'] = 'heures';

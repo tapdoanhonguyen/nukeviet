@@ -12,14 +12,18 @@
     <meta name="viewport" content="width=device-width">
     <title>{SITE_NAME} {NV_TITLEBAR_DEFIS} {GLANG.admin_page}</title>
     <link rel="stylesheet" href="{NV_BASE_SITEURL}themes/default/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{ASSETS_STATIC_URL}/css/font-awesome.min.css">
     <link rel="stylesheet" href="{NV_BASE_SITEURL}themes/{ADMIN_THEME}/css/style.css">
     <link rel="stylesheet" type="text/css" href="{NV_BASE_SITEURL}themes/{ADMIN_THEME}/css/login.css" />
     <script type="text/javascript">
         var base_siteurl = '{NV_BASE_SITEURL}';
     </script>
-    <script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/global.js"></script>
+    <script type="text/javascript" src="{ASSETS_STATIC_URL}/js/global{AUTO_MINIFIED}.js"></script>
     <script type="text/javascript" src="{NV_BASE_SITEURL}themes/{ADMIN_THEME}/js/login.js"></script>
+    <!-- BEGIN: passshow_button -->
+    <link rel="stylesheet" href="{ASSETS_STATIC_URL}/js/show-pass-btn/bootstrap3-show-pass.css">
+    <script type="text/javascript" src="{ASSETS_STATIC_URL}/js/show-pass-btn/bootstrap3-show-pass.js"></script>
+    <!-- END: passshow_button -->
 </head>
 
 <body>
@@ -61,7 +65,7 @@
     <div class="inner-message normal">{GLANG.adminlogininfo}</div>
     <div class="form-detail">
         <div class="form-group">
-            <label for="nv_login" class="col-xs-9 control-label form-label">{GLANG.username}:</label>
+            <label for="nv_login" class="col-xs-9 control-label form-label">{GLANG.login_name}:</label>
             <div class="col-xs-15"><input autocomplete="off" class="form-control" name="nv_login" type="text" id="nv_login" value="{V_LOGIN}" data-error-mess="{GLANG.username_empty}" /></div>
         </div>
         <div class="form-group">

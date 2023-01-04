@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -23,9 +23,9 @@ $nv_BotManager->setPrivate();
 
 /**
  * get_checknum()
- * 
- * @param mixed $userid 
- * @return mixed 
+ *
+ * @param mixed $userid
+ * @return mixed
  */
 function get_checknum($userid)
 {
@@ -69,7 +69,8 @@ function validUserLog($array_user, $remember, $oauth_data, $current_mode = 0)
         'current_login' => NV_CURRENTTIME,
         'prev_login' => (int) ($array_user['last_login']),
         'prev_openid' => $array_user['last_openid'],
-        'current_openid' => $opid
+        'current_openid' => $opid,
+        'language' => $array_user['language']
     ];
 
     $stmt = $db->prepare('UPDATE ' . NV_MOD_TABLE . ' SET
@@ -102,8 +103,16 @@ function validUserLog($array_user, $remember, $oauth_data, $current_mode = 0)
     $sth->bindValue(':openid', $opid, PDO::PARAM_STR);
     $sth->execute();
 
-    $live_cookie_time = ($remember) ? NV_LIVE_COOKIE_TIME : 0;
-    $nv_Request->set_Cookie('nvloginhash', json_encode($user), $live_cookie_time);
+    NukeViet\Core\User::set_userlogin_hash($user, $remember);
+
+    // Tạo thông báo đẩy nếu đăng nhập lần đầu
+    if (empty($array_user['last_login'])) {
+        add_push([
+            'receiver_ids' => [$array_user['userid']],
+            'message' => sprintf($lang_module['welcome_new_account'], $global_config['site_name']),
+            'link' => nv_url_rewrite(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name, true)
+        ]);
+    }
 
     if (!empty($global_users_config['active_user_logs'])) {
         $log_message = $opid ? ($lang_module['userloginviaopt'] . ' ' . $oauth_data['provider']) : $lang_module['st_login'];
@@ -112,11 +121,36 @@ function validUserLog($array_user, $remember, $oauth_data, $current_mode = 0)
 }
 
 /**
+ * updateUserCookie()
+ *
+ * @param mixed $newValues
+ */
+function updateUserCookie($newValues)
+{
+    global $db, $user_info, $user_cookie;
+
+    if (!empty($user_cookie)) {
+        $isUpdate = false;
+        if (!empty($newValues)) {
+            foreach ($newValues as $key => $value) {
+                if (isset($user_cookie[$key]) and $value != $user_cookie[$key]) {
+                    $user_cookie[$key] = $value;
+                    $isUpdate = true;
+                }
+            }
+        }
+        if ($isUpdate) {
+            $remember = (int) $db->query('SELECT remember FROM ' . NV_MOD_TABLE . ' WHERE userid=' . $user_info['userid'] . ' AND active=1')->fetchColumn();
+            NukeViet\Core\User::set_userlogin_hash($user_cookie, $remember);
+        }
+    }
+}
+
+/**
  * nv_check_email_reg()
  * Ham kiem tra email kha dung
  *
  * @param mixed $email
- * @return
  */
 function nv_check_email_reg(&$email)
 {
@@ -190,7 +224,6 @@ function nv_check_email_reg(&$email)
  * Ham kiem tra ten dang nhap kha dung
  *
  * @param mixed $login
- * @return
  */
 function nv_check_username_reg($login)
 {
@@ -278,7 +311,7 @@ function nv_del_user($userid)
     $subject = $lang_module['delconfirm_email_title'];
     $message = sprintf($lang_module['delconfirm_email_content'], $userdelete, $global_config['site_name']);
     $message = nl2br($message);
-    nv_sendmail([$global_config['site_name'], $global_config['site_email']], $email, $subject, $message);
+    nv_sendmail_async([$global_config['site_name'], $global_config['site_email']], $email, $subject, $message);
 
     return $userid;
 }
@@ -320,20 +353,34 @@ function opidr_login($openid_info)
     include NV_ROOTDIR . '/includes/footer.php';
 }
 
-// Xác định cấu hình module
-$global_users_config = [];
-$cacheFile = NV_LANG_DATA . '_' . $module_data . '_config_' . NV_CACHE_PREFIX . '.cache';
-$cacheTTL = 3600;
-if (($cache = $nv_Cache->getItem($module_name, $cacheFile, $cacheTTL)) != false) {
-    $global_users_config = unserialize($cache);
-} else {
-    $sql = 'SELECT config, content FROM ' . NV_MOD_TABLE . '_config';
-    $result = $db->query($sql);
-    while ($row = $result->fetch()) {
-        $global_users_config[$row['config']] = $row['content'];
+/**
+ * checkLoginName()
+ *
+ * @param string $type
+ * @param string $name
+ * @return mixed
+ */
+function checkLoginName($type, $name)
+{
+    global $db;
+
+    $type != 'email' && $type = 'username';
+    if ($type == 'email') {
+        $where = 'email =' . $db->quote($name);
+    } else {
+        $where = 'md5username =' . $db->quote(nv_md5safe($name));
     }
-    $cache = serialize($global_users_config);
-    $nv_Cache->setItem($module_name, $cacheFile, $cache, $cacheTTL);
+
+    $row = $db->query('SELECT * FROM ' . NV_MOD_TABLE . ' WHERE ' . $where)->fetch();
+    if (empty($row[$type])) {
+        return false;
+    }
+
+    if (strcmp($row[$type], $name) !== 0) {
+        return false;
+    }
+
+    return $row;
 }
 
 $group_id = 0;

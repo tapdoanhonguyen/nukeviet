@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -152,11 +152,12 @@ function nv_save_file_config_global()
     $config_variable['send_errors_list'] = NV_SEND_ERRORS_LIST;
     $config_variable['error_log_path'] = NV_LOGS_DIR . '/error_logs';
     $config_variable['error_log_filename'] = NV_ERRORLOGS_FILENAME;
+    $config_variable['notice_log_filename'] = NV_NOTICELOGS_FILENAME;
     $config_variable['error_log_fileext'] = NV_LOGS_EXT;
     $config_variable['error_send_email'] = $config_variable['error_send_email'];
 
     $config_name_array = ['file_allowed_ext', 'forbid_extensions', 'forbid_mimes', 'allow_sitelangs', 'allow_request_mods', 'config_sso'];
-    $config_name_json = ['crosssite_valid_domains', 'crosssite_valid_ips', 'crosssite_allowed_variables', 'crossadmin_valid_domains', 'crossadmin_valid_ips', 'domains_whitelist', 'ip_allow_null_origin', 'zaloWebhookIPs', 'end_url_variables'];
+    $config_name_json = ['crosssite_valid_domains', 'crosssite_valid_ips', 'crosssite_allowed_variables', 'crossadmin_valid_domains', 'crossadmin_valid_ips', 'domains_whitelist', 'ip_allow_null_origin', 'zaloWebhookIPs', 'end_url_variables', 'cdn_url'];
 
     foreach ($config_variable as $c_config_name => $c_config_value) {
         if (in_array($c_config_name, $config_name_array, true)) {
@@ -167,19 +168,27 @@ function nv_save_file_config_global()
             }
             $content_config .= "\$global_config['" . $c_config_name . "'] = [" . $c_config_value . "];\n";
         } elseif (in_array($c_config_name, $config_name_json, true)) {
-            $c_config_value = empty($c_config_value) ? [] : ((array) json_decode($c_config_value, true));
+            if (empty($c_config_value)) {
+                $value = [];
+            } else {
+                $value = (array) json_decode($c_config_value, true);
+                if ($c_config_name == 'cdn_url' and json_last_error() !== JSON_ERROR_NONE) {
+                    $value = [$c_config_value => [1]];
+                }
+            }
+
             if ($c_config_name == 'end_url_variables') {
                 $_value = [];
-                if (!empty($c_config_value)) {
-                    foreach ($c_config_value as $k => $val) {
+                if (!empty($value)) {
+                    foreach ($value as $k => $val) {
                         $val = "'" . implode("','", $val) . "'";
-                        $_value[] = "'" . $k . "' => [" . $val . "]";
+                        $_value[] = "'" . $k . "' => [" . $val . ']';
                     }
                 }
-                $c_config_value = !empty($_value) ? implode(',', $_value) : '';
-                $content_config .= "\$global_config['" . $c_config_name . "'] = [" . $c_config_value . "];\n";
+                $value = !empty($_value) ? implode(',', $_value) : '';
+                $content_config .= "\$global_config['" . $c_config_name . "'] = [" . $value . "];\n";
             } else {
-                $content_config .= "\$global_config['" . $c_config_name . "'] = " . nv_var_export($c_config_value) . ";\n";
+                $content_config .= "\$global_config['" . $c_config_name . "'] = " . nv_var_export($value) . ";\n";
             }
         } else {
             if (preg_match('/^(0|[1-9][0-9]*)$/', $c_config_value) and $c_config_name != 'facebook_client_id') {
@@ -225,13 +234,6 @@ function nv_save_file_config_global()
     }
     unset($language_array);
     $content_config .= '$language_array = ' . nv_var_export($tmp_array) . ";\n";
-
-    $global_config['rewrite_optional'] = $config_variable['rewrite_optional'];
-    $global_config['rewrite_op_mod'] = $config_variable['rewrite_op_mod'];
-
-    $global_config['rewrite_endurl'] = $config_variable['rewrite_endurl'];
-    $global_config['rewrite_exturl'] = $config_variable['rewrite_exturl'];
-
     $content_config .= "\n";
 
     $nv_plugins = [];
@@ -388,11 +390,8 @@ function nv_version_compare($version1, $version2)
  */
 function nv_check_rewrite_file()
 {
-    global $sys_info;
+    global $sys_info, $global_config;
 
-    if ($sys_info['supports_rewrite'] == 'nginx') {
-        return true;
-    }
     if ($sys_info['supports_rewrite'] == 'rewrite_mode_apache') {
         if (!file_exists(NV_ROOTDIR . '/.htaccess')) {
             return false;
@@ -400,8 +399,15 @@ function nv_check_rewrite_file()
 
         $htaccess = @file_get_contents(NV_ROOTDIR . '/.htaccess');
 
-        return preg_match('/\#nukeviet\_rewrite\_start(.*)\#nukeviet\_rewrite\_end/s', $htaccess);
+        if (preg_match('/\#nukeviet\_rewrite\_start(.*)\#nukeviet\_rewrite\_end/is', $htaccess)) {
+            return true;
+        }
+
+        $_check_rewrite = @file_get_contents(NV_MY_DOMAIN . NV_BASE_SITEURL . 'check.rewrite');
+
+        return !empty($_check_rewrite) and $_check_rewrite == 'rewrite_mode_apache';
     }
+
     if ($sys_info['supports_rewrite'] == 'rewrite_mode_iis') {
         if (!file_exists(NV_ROOTDIR . '/web.config')) {
             return false;
@@ -409,10 +415,16 @@ function nv_check_rewrite_file()
 
         $web_config = @file_get_contents(NV_ROOTDIR . '/web.config');
 
-        return preg_match('/<rule name="nv_rule_rewrite">(.*)<\/rule>/s', $web_config);
+        if (preg_match('/\<\!\-\-\s*nukeviet\_rewrite\_start\s*\-\-\>(.*)\<\!\-\-\s*nukeviet\_rewrite\_end\s*\-\-\>/is', $web_config)) {
+            return true;
+        }
+
+        $_check_rewrite = @file_get_contents(NV_MY_DOMAIN . NV_BASE_SITEURL . 'check.rewrite');
+
+        return !empty($_check_rewrite) and $_check_rewrite == 'rewrite_mode_iis';
     }
 
-    return false;
+    return (bool) $global_config['check_rewrite_file'];
 }
 
 /**
@@ -673,31 +685,6 @@ function nv_getExtVersion($updatetime = 3600)
     }
 
     return $xmlcontent;
-}
-
-/**
- * nv_http_get_lang()
- *
- * @param array $input
- * @return string
- */
-function nv_http_get_lang($input)
-{
-    global $lang_global;
-
-    if (!isset($input['code']) or !isset($input['message'])) {
-        return '';
-    }
-
-    if (!empty($lang_global['error_code_' . $input['code']])) {
-        return $lang_global['error_code_' . $input['code']];
-    }
-
-    if (!empty($input['message'])) {
-        return $input['message'];
-    }
-
-    return 'Error' . ($input['code'] ? ': ' . $input['code'] . '.' : '.');
 }
 
 /**

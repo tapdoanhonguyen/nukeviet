@@ -2,19 +2,18 @@
 <iframe src="{IFRAME_SRC}" id="uploadframe"></iframe>
 <!-- END: uploadPage -->
 <!-- BEGIN: main -->
-<link type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
-<link type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.treeview.css" rel="stylesheet" />
-<link  type="text/css"href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/cropper/cropper.min.css" rel="stylesheet" />
+<link type="text/css" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+<link type="text/css" href="{ASSETS_STATIC_URL}/js/jquery/jquery.treeview.css" rel="stylesheet" />
+<link  type="text/css"href="{ASSETS_STATIC_URL}/js/cropper/cropper.min.css" rel="stylesheet" />
 
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/cropper/cropper.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.flash.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.lazyload.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.treeview.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jQueryRotate.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/plupload/plupload.full.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/plupload-{NV_LANG_INTERFACE}.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/clipboard/clipboard.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/cropper/cropper.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jquery.lazyload.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jquery.treeview.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jQueryRotate{AUTO_MINIFIED}.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/plupload/plupload.full.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/plupload-{NV_LANG_INTERFACE}.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/clipboard/clipboard.min.js"></script>
 
 <div class="content">
     <div class="row upload-wrap">
@@ -26,7 +25,7 @@
             </p>
         </div>
         <div id="upload-content" class="col-lg-20 col-md-20 col-sm-18 filebrowse">
-            <div id="imglist" class="clearfix">
+            <div id="imglist" class="accept-touch-action clearfix">
                 <p class="upload-loading">
                     <em class="fa fa-spin fa-spinner fa-2x m-bottom"></em>
                     <br />
@@ -55,7 +54,6 @@
                     <select name="imgtype" title="{LANG.selectfiletype}" class="form-control input-sm vchange">
                         <option value="file"{SFILE}>{LANG.type_file}</option>
                         <option value="image"{SIMAGE}>{LANG.type_image}</option>
-                        <option value="flash"{SFLASH}>{LANG.type_flash}</option>
                     </select>
                 </div>
                 <div class="col-sm-5">
@@ -151,6 +149,38 @@
                 <button class="btn btn-default" data-clipboard-target="#FileAbsolutePath" id="FileAbsolutePathBtn" data-title="{LANG.filepathcopied}" data-placement="left" data-container="body" data-trigger="manual" data-animation="0"><i class="fa fa-copy"></i></button>
             </span>
         </div>
+    </div>
+</div>
+
+<div id="qualitychangeObj" title="{LANG.qualitychange}">
+    <div id="imageView" class="dynamic image-content"></div>
+    <div id="OrigImageInfo" class="dynamic orig-image"></div>
+    <div id="imageInfoDetail" class="dynamic image-detail m-bottom"></div>
+    <div class="text-center">
+        <label>{LANG.quality}</label>
+        <select class="form-control d-inline-block w100" name="quality">
+            <option value="">{LANG.original_image}</option>
+            <option value="100">100</option>
+            <option value="95">95</option>
+            <option value="90">90</option>
+            <option value="85">85</option>
+            <option value="80">80</option>
+            <option value="75">75</option>
+            <option value="70">70</option>
+            <option value="65">65</option>
+            <option value="60">60</option>
+            <option value="55">55</option>
+            <option value="50">50</option>
+            <option value="45">45</option>
+            <option value="40">40</option>
+            <option value="35">35</option>
+            <option value="30">30</option>
+            <option value="25">25</option>
+            <option value="20">20</option>
+            <option value="15">15</option>
+            <option value="10">10</option>
+        </select>
+        <input id="qualitychangeOK" type="button" class="btn btn-primary d-inline-block" value="{LANG.addlogosave}"/>
     </div>
 </div>
 
@@ -361,6 +391,12 @@ LANG.addlogo_error_small = "{LANG.addlogo_error_small}";
 LANG.altimage = "{LANG.altimage}";
 LANG.upload_alt_note = "{LANG.upload_alt_note}";
 LANG.autologo_for_upload = "{LANG.autologo_for_upload}";
+LANG.webpconvert = "{LANG.webpconvert}";
+LANG.compressimage = "{LANG.compressimage}";
+LANG.qualitychange = "{LANG.qualitychange}";
+LANG.quality = "{LANG.quality}";
+LANG.filesize = "{LANG.filesize}";
+LANG.original_filesize = "{LANG.original_filesize}";
 
 var nv_my_domain = '{NV_MY_DOMAIN}';
 var nv_max_size_bytes = '{NV_MAX_SIZE_BYTES}';
@@ -373,6 +409,7 @@ var nv_module_url = "{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DAT
 var nv_namecheck = /^([a-zA-Z0-9_-])+$/;
 var array_images = ["gif", "jpg", "jpeg", "pjpeg", "png", "webp"];
 var nv_loading_data = '<p class="upload-loading"><em class="fa fa-spin fa-spinner fa-2x m-bottom"></em><br />{LANG.waiting}...</p>';
+var nv_compressimage_active = {COMPRESS_IMAGE_ACTIVE};
 
 // Resize images on clientside if we can
 var nv_resize = {
@@ -389,7 +426,7 @@ var nv_alt_require = {UPLOAD_ALT_REQUIRE};
 var nv_auto_alt = {UPLOAD_AUTO_ALT};
 //]]>
 </script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/upload.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/upload{AUTO_MINIFIED}.js"></script>
 <script type="text/javascript">
 $(function() {
     $("#imgfolder").load(nv_module_url + "folderlist&path={PATH}&currentpath={CURRENTPATH}&random=" + nv_randomNum(10));

@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -131,7 +131,7 @@ if ($nv_Request->isset_request('gid, getuserid', 'post, get')) {
         if ($userid) {
             // Luu vao bang OpenID
             if (!empty($row['openid_info'])) {
-                $reg_attribs = unserialize(nv_base64_decode($row['openid_info']));
+                $reg_attribs = json_decode($row['openid_info'], true);
                 $stmt = $db->prepare('INSERT INTO ' . NV_MOD_TABLE . '_openid VALUES (' . $userid . ', :server, :opid , :email)');
                 $stmt->bindParam(':server', $reg_attribs['server'], PDO::PARAM_STR);
                 $stmt->bindParam(':opid', $reg_attribs['opid'], PDO::PARAM_STR);
@@ -146,7 +146,7 @@ if ($nv_Request->isset_request('gid, getuserid', 'post, get')) {
             )');
             $db->query('UPDATE ' . NV_MOD_TABLE . '_groups SET numbers = numbers+1 WHERE group_id=4 or group_id=' . $gid);
             $db->query('UPDATE ' . NV_MOD_TABLE . ' SET group_id = ' . $gid . ', in_groups=' . $gid . ' WHERE userid=' . $userid);
-            $users_info = unserialize(nv_base64_decode($row['users_info']));
+            $users_info = json_decode($row['users_info'], true);
             $query_field = [];
             $query_field['userid'] = $userid;
             $result_field = $db->query('SELECT * FROM ' . NV_MOD_TABLE . '_field ORDER BY fid ASC');
@@ -170,8 +170,8 @@ if ($nv_Request->isset_request('gid, getuserid', 'post, get')) {
                 $full_name = nv_show_name_user($row['first_name'], $row['last_name'], $row['username']);
                 $subject = $lang_module['adduser_register'];
                 $_url = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name, NV_MY_DOMAIN);
-                $message = sprintf($lang_module['adduser_register_info'], $full_name, $global_config['site_name'], $_url, $row['username']);
-                @nv_sendmail([
+                $message = sprintf($lang_module['adduser_register_info'], $full_name, $global_config['site_name'], $_url, $row['username'], $row['email']);
+                @nv_sendmail_async([
                     $global_config['site_name'],
                     $global_config['site_email']
                 ], $row['email'], $subject, $message);
@@ -523,7 +523,7 @@ if (sizeof($array_op) == 3 and $array_op[0] == 'groups' and $array_op[1] and $ar
         {
             global $module_data;
             $return = '<textarea style="width: ' . $width . '; height:' . $height . ';" id="' . $module_data . '_' . $textareaname . '" name="' . $textareaname . '">' . $val . '</textarea>';
-            $return .= "<script" . (defined('NV_SCRIPT_NONCE') ? ' nonce="' . NV_SCRIPT_NONCE . '"' : '') . ">
+            $return .= '<script' . (defined('NV_SCRIPT_NONCE') ? ' nonce="' . NV_SCRIPT_NONCE . '"' : '') . ">
             CKEDITOR.replace( '" . $module_data . '_' . $textareaname . "', {" . (!empty($customtoolbar) ? 'toolbar : "' . $customtoolbar . '",' : '') . " width: '" . $width . "',height: '" . $height . "',removePlugins: 'uploadfile,uploadimage'});
             </script>";
 
@@ -598,6 +598,37 @@ if (sizeof($array_op) == 3 and $array_op[0] == 'groups' and $array_op[1] and $ar
     include NV_ROOTDIR . '/includes/footer.php';
 }
 
+// Quản lý thông báo đẩy
+if (!empty($global_config['push_active']) and sizeof($array_op) == 3 and $array_op[0] == 'groups' and $array_op[1] and $array_op[2] == 'push') {
+    $group_id = (int) $array_op[1];
+    if (!isset($groupsList[$group_id]) or !($group_id < 4 or $group_id > 9)) {
+        nv_redirect_location($page_url);
+    }
+
+    $count = $db->query('SELECT COUNT(*) FROM ' . NV_MOD_TABLE . '_groups_users WHERE group_id=' . $group_id . ' AND is_leader=1 AND userid=' . $user_info['userid'])->fetchColumn();
+    if (!$count) {
+        nv_redirect_location(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name . '&' . NV_OP_VARIABLE . '=' . $op);
+    }
+
+    $page_url .= '/' . $group_id . '/push';
+
+    $xtpl = new XTemplate($op . '.tpl', NV_ROOTDIR . '/themes/' . $module_info['template'] . '/modules/' . $module_info['module_theme']);
+    $xtpl->assign('LANG', $lang_module);
+    $xtpl->assign('GLANG', $lang_global);
+    $xtpl->assign('GROUP_MANAGER_URL', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=' . $op . '/' . $group_id);
+    $xtpl->assign('PUSH_MANAGER_URL', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=push&amp;manager=' . $group_id . '&amp;filter=active');
+    $xtpl->assign('GTITLE', $groupsList[$group_id]['title']);
+
+    $xtpl->parse('push_notifications');
+    $contents = $xtpl->text('push_notifications');
+
+    $canonicalUrl = getCanonicalUrl($page_url);
+
+    include NV_ROOTDIR . '/includes/header.php';
+    echo nv_site_theme($contents);
+    include NV_ROOTDIR . '/includes/footer.php';
+}
+
 $lang_module['nametitle'] = $global_config['name_show'] == 0 ? $lang_module['lastname_firstname'] : $lang_module['firstname_lastname'];
 
 $xtpl = new XTemplate($op . '.tpl', NV_ROOTDIR . '/themes/' . $module_info['template'] . '/modules/' . $module_info['module_theme']);
@@ -639,6 +670,10 @@ if (sizeof($array_op) == 2 and $array_op[0] == 'groups' and $array_op[1]) {
     $xtpl->assign('EDIT_GROUP_URL', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=' . $op . '/' . $group_id . '/edit');
 
     if ($group_id > 9) {
+        if (!empty($global_config['push_active'])) {
+            $xtpl->assign('PUSH_NOTIFICATIONS_URL', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=' . $op . '/' . $group_id . '/push');
+            $xtpl->parse('userlist.tools.push_notifications');
+        }
         if ($groupsList[$group_id]['config']['access_groups_add'] != 0) {
             $xtpl->parse('userlist.tools.addUserGroup');
         }

@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -37,7 +37,7 @@ if (empty($currentpath)) {
     $currentpath = NV_UPLOADS_DIR;
 }
 
-if ($type != 'image' and $type != 'flash') {
+if ($type != 'image') {
     $type = 'file';
 }
 
@@ -73,12 +73,11 @@ if ($popup) {
     $xtpl->assign('FUNNUM', $nv_Request->get_int('CKEditorFuncNum', 'get', 0));
     $xtpl->assign('NV_CHUNK_SIZE', $global_config['upload_chunk_size']);
     $xtpl->assign('SELFILE', $selectfile);
+    $xtpl->assign('COMPRESS_IMAGE_ACTIVE', (class_exists('Tinify\Tinify') and !empty($global_config['tinify_active']) and !empty($global_config['tinify_api'])) ? 'true' : 'false');
 
     $sfile = ($type == 'file') ? ' selected="selected"' : '';
     $simage = ($type == 'image') ? ' selected="selected"' : '';
-    $sflash = ($type == 'flash') ? ' selected="selected"' : '';
 
-    $xtpl->assign('SFLASH', $sflash);
     $xtpl->assign('SIMAGE', $simage);
     $xtpl->assign('SFILE', $sfile);
 
@@ -96,8 +95,6 @@ if ($popup) {
     // Check upload allow file types
     if ($type == 'image' and in_array('images', $admin_info['allow_files_type'], true)) {
         $allow_files_type = ['images'];
-    } elseif ($type == 'flash' and in_array('flash', $admin_info['allow_files_type'], true)) {
-        $allow_files_type = ['flash'];
     } else {
         $allow_files_type = $admin_info['allow_files_type'];
     }

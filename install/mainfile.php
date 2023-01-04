@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -20,7 +20,7 @@ define('NV_MAINFILE', true);
 
 // Khong cho xac dinh tu do cac variables
 $db_config = $global_config = $module_config = $client_info = $user_info = $admin_info = $sys_info = $lang_global = $lang_module = $rss = $nv_vertical_menu = $array_mod_title = $content_type = $select_options = $error_info = $countries = [];
-$page_title = $key_words = $canonicalUrl = $mod_title = $editor_password = $my_head = $my_footer = $description = $contents = '';
+$page_title = $key_words = $canonicalUrl = $editor_password = $my_head = $my_footer = $description = $contents = '';
 $editor = false;
 
 // Xac dinh thu muc goc cua site
@@ -64,15 +64,15 @@ $global_config['allowed_html_tags'] = array_map('trim', explode(',', NV_ALLOWED_
 
 // Xac dinh IP cua client
 $ips = new NukeViet\Core\Ips();
-$client_info['ip'] = $ips->remote_ip;
+$client_info['ip'] = $ips::$remote_ip;
 if ($client_info['ip'] == 'none') {
     exit('Error: Your IP address is not correct');
 }
 
 // Neu khong co IP
 // define( 'NV_SERVER_IP', $ips->server_ip );
-define('NV_FORWARD_IP', $ips->forward_ip);
-define('NV_REMOTE_ADDR', $ips->remote_addr);
+define('NV_FORWARD_IP', $ips::$forward_ip);
+define('NV_REMOTE_ADDR', $ips::$remote_addr);
 define('NV_CLIENT_IP', $client_info['ip']);
 
 // Xac dinh Quoc gia
@@ -88,6 +88,7 @@ $global_config['display_errors_list'] = NV_DISPLAY_ERRORS_LIST;
 $global_config['send_errors_list'] = NV_SEND_ERRORS_LIST;
 $global_config['error_log_path'] = NV_LOGS_DIR . '/error_logs';
 $global_config['error_log_filename'] = NV_ERRORLOGS_FILENAME;
+$global_config['notice_log_filename'] = NV_NOTICELOGS_FILENAME;
 $global_config['error_log_fileext'] = NV_LOGS_EXT;
 
 // Ket noi voi class Error_handler

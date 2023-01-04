@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -24,13 +24,7 @@ if (empty($userid) or empty($checknum)) {
     nv_redirect_location(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name);
 }
 
-$register_active_time = isset($global_users_config['register_active_time']) ? $global_users_config['register_active_time'] : 86400;
-if ($register_active_time > 0) {
-    $del = NV_CURRENTTIME - $register_active_time;
-    $sql = 'DELETE FROM ' . NV_MOD_TABLE . '_reg WHERE regdate < ' . $del;
-    $db->query($sql);
-}
-
+delOldRegAccount();
 $sql = 'SELECT * FROM ' . NV_MOD_TABLE . '_reg WHERE userid=' . $userid;
 $row = $db->query($sql)->fetch();
 
@@ -38,7 +32,7 @@ if (empty($row)) {
     nv_redirect_location(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name);
 }
 
-$page_title = $mod_title = $lang_module['register'];
+$page_title = $lang_module['register'];
 $key_words = $module_info['keywords'];
 $page_url = NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name . '&' . NV_OP_VARIABLE . '=' . $op . '&userid=' . $userid . '&checknum=' . $checknum;
 
@@ -91,7 +85,7 @@ if ($checknum == $row['checknum']) {
 
         $userid = $db->insert_id($sql, 'userid', $data_insert);
         if ($userid) {
-            $users_info = unserialize(nv_base64_decode($row['users_info']));
+            $users_info = json_decode($row['users_info'], true);
             $query_field = [];
             $query_field['userid'] = $userid;
             $result_field = $db->query('SELECT * FROM ' . NV_MOD_TABLE . '_field ORDER BY fid ASC');

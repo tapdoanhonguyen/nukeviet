@@ -1,6 +1,6 @@
 <!-- BEGIN: main -->
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.validate.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jquery.validate.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
 
 <form action="{NV_BASE_ADMINURL}index.php?{NV_LANG_VARIABLE}={NV_LANG_DATA}&{NV_NAME_VARIABLE}={MODULE_NAME}&amp;{NV_OP_VARIABLE}={OP}" method="post" id="frm">
     <div class="table-responsive">
@@ -9,7 +9,7 @@
             <col />
             <tfoot>
                 <tr>
-                    <td colspan="2" class="text-center"><input type="submit" value="{LANG.pubdate}" name="submit" class="btn btn-primary" /></td>
+                    <td colspan="2" class="text-center"><input type="hidden" name="save" value="1"><input type="submit" value="{LANG.pubdate}" class="btn btn-primary" /></td>
                 </tr>
             </tfoot>
             <tbody>
@@ -33,11 +33,13 @@
                 <tr>
                     <td><strong>{LANG.upload_checking_mode}:</strong></td>
                     <td>
-                    <select name="upload_checking_mode" class="form-control w100">
-                        <!-- BEGIN: upload_checking_mode -->
-                        <option value="{UPLOAD_CHECKING_MODE.key}"{UPLOAD_CHECKING_MODE.selected}>{UPLOAD_CHECKING_MODE.title}</option>
-                        <!-- END: upload_checking_mode -->
-                    </select> {UPLOAD_CHECKING_NOTE} </td>
+                        <select name="upload_checking_mode" class="form-control w100 m-bottom">
+                            <!-- BEGIN: upload_checking_mode -->
+                            <option value="{UPLOAD_CHECKING_MODE.key}" data-description="{UPLOAD_CHECKING_MODE.description}"{UPLOAD_CHECKING_MODE.selected}>{UPLOAD_CHECKING_MODE.title}</option>
+                            <!-- END: upload_checking_mode -->
+                        </select> {UPLOAD_CHECKING_NOTE}
+                        <div class="help-block m-bottom-none">{UPLOAD_CHECKING_MODE_DESC}</div>
+                    </td>
                 </tr>
                 <tr>
                     <td><strong>{LANG.upload_alt_require}</strong></td>

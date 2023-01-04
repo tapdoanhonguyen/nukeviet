@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -821,7 +821,7 @@ if ($step == 1) {
                     $sth->bindParam(':answer_question', $array_data['answer_question'], PDO::PARAM_STR);
                     $ok1 = $sth->execute();
 
-                    $ok2 = $db->exec('INSERT INTO ' . $db_config['prefix'] . '_authors (admin_id, editor, lev, files_level, position, addtime, edittime, is_suspend, susp_reason, check_num, last_login, last_ip, last_agent) VALUES(' . $userid . ", 'ckeditor', 1, 'adobe,application,archives,audio,documents,flash,images,real,video|1|1|1', 'Administrator', 0, 0, 0, '', '', 0, '', '')");
+                    $ok2 = $db->exec('INSERT INTO ' . $db_config['prefix'] . '_authors (admin_id, editor, lev, files_level, position, addtime, edittime, is_suspend, susp_reason, check_num, last_login, last_ip, last_agent) VALUES(' . $userid . ", 'ckeditor', 1, 'adobe,application,archives,audio,documents,images,real,video|1|1|1', 'Administrator', 0, 0, 0, '', '', 0, '', '')");
 
                     if ($ok1 and $ok2) {
                         try {
@@ -1320,6 +1320,7 @@ function nv_save_file_config()
         $content .= "\$global_config['cached'] = 'files';\n";
         $content .= "\$global_config['session_handler'] = 'files';\n";
         $content .= "\$global_config['extension_setup'] = 3; // 0: No, 1: Upload, 2: NukeViet Store, 3: Upload + NukeViet Store\n";
+        $content .= "\$global_config['core_cdn_url'] = '" . $global_config['core_cdn_url'] . "';\n";
         $content .= '// Readmore: https://wiki.nukeviet.vn/nukeviet4:advanced_setting:file_config';
 
         if ($step < 7) {

@@ -68,6 +68,12 @@
                 <td>{LANG.regdate}</td>
                 <td>{USER.regdate}</td>
             </tr>
+            <!-- BEGIN: langinterface -->
+            <tr>
+                <td>{GLANG.langinterface}</td>
+                <td>{USER.langinterface}</td>
+            </tr>
+            <!-- END: langinterface -->
             <!-- BEGIN: field -->
             <!-- BEGIN: loop -->
             <tr>
@@ -85,6 +91,10 @@
             <tr>
                 <td>{LANG.st_login2}</td>
                 <td>{USER.st_login}</td>
+            </tr>
+            <tr>
+                <td>{LANG.login_name}</td>
+                <td>{USER.login_name}</td>
             </tr>
             <tr>
                 <td>{LANG.2step_status}</td>

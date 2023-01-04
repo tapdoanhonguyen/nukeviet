@@ -1,9 +1,9 @@
 <!-- BEGIN: main -->
-<link type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/select2/select2.min.css">
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/select2/select2.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
+<link type="text/css" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{ASSETS_STATIC_URL}/js/select2/select2.min.css">
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/select2/select2.min.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
 
 <!-- BEGIN: error -->
 <div class="alert alert-danger">
@@ -47,7 +47,7 @@
                 </tr>
                 <tr>
                     <td><strong>{LANG.site_phone}</strong></td>
-                    <td><input type="text" name="site_phone" value="{DATA.site_phone}" class="form-control" style="width: 450px"/></td>
+                    <td><input type="text" name="site_phone" value="{DATA.site_phone}" class="form-control m-bottom" style="width: 450px"/><button type="button" data-toggle="phone_note">{GLANG.phone_note_title}</button></td>
                 </tr>
                 <tr>
                     <td><strong>{LANG.themeadmin}</strong></td>
@@ -146,17 +146,10 @@
                     <td><input type="text" name="my_domains" value="{MY_DOMAINS}" class="form-control" style="width: 450px"/></td>
                 </tr>
                 <tr>
-                    <td><strong>{LANG.static_url}</strong></td>
+                    <td><strong>{LANG.static_noquerystring}</strong></td>
                     <td>
-                        <div class="m-bottom">
-                            <input type="text" name="nv_static_url" value="{DATA.nv_static_url}" class="form-control" style="width: 450px"/>
-                        </div>
-                        {LANG.static_url_note}
+                        <input type="checkbox" name="static_noquerystring" value="1"{STATIC_NOQUERYSTRING_CHECKED}/>
                     </td>
-                </tr>
-                <tr>
-                    <td><strong>{LANG.cdn_url}</strong></td>
-                    <td><input type="text" name="cdn_url" value="{DATA.cdn_url}" class="form-control pull-left" style="width: 450px"/></td>
                 </tr>
                 <tr>
                     <td><strong>{LANG.error_set_logs}</strong></td>
@@ -167,14 +160,6 @@
                     <td><label><input type="checkbox" name="nv_debug" value="1"{CFG_DEFINE.nv_debug}/> {LANG.nv_debug_help}</label></td>
                 </tr>
                 <tr>
-                    <td><strong>{LANG.remote_api_access}</strong></td>
-                    <td><label><input type="checkbox" name="remote_api_access" value="1"{CHECKED_REMOTE_API_ACCESS}/> {LANG.remote_api_access_help}</label></td>
-                </tr>
-                <tr>
-                    <td><strong>{LANG.remote_api_log}</strong></td>
-                    <td><input type="checkbox" name="remote_api_log" value="1"{CHECKED_REMOTE_API_LOG}/></td>
-                </tr>
-                <tr>
                     <td><strong>{LANG.cookie_notice_popup}</strong></td>
                     <td><input type="checkbox" name="cookie_notice_popup" value="1"{CHECKED_COOKIE_NOTICE_POPUP}/></td>
                 </tr>
@@ -182,10 +167,22 @@
                     <td><strong>{LANG.error_send_email}</strong></td>
                     <td><input type="email" name="error_send_email" value="{DATA.error_send_email}" class="form-control" style="width: 450px"/></td>
                 </tr>
+                <tr>
+                    <td><strong>{LANG.unsign_vietwords}</strong></td>
+                    <td>
+                        <input type="checkbox" value="1" name="unsign_vietwords" {CHECKED_UNSIGN_VIETWORDS}/>
+                        {LANG.unsign_vietwords_note}
+                    </td>
+                </tr>
                 <!-- END: system -->
                 <tr>
                     <td><strong>{LANG.searchEngineUniqueID}</strong></td>
-                    <td><input type="text" name="searchEngineUniqueID" value="{DATA.searchEngineUniqueID}" class="form-control" style="width: 450px" maxlength="50" /></td>
+                    <td>
+                        <div class="m-bottom">
+                            <input type="text" name="searchEngineUniqueID" value="{DATA.searchEngineUniqueID}" class="form-control" style="width: 450px" maxlength="50" />
+                        </div>
+                        {LANG.searchEngineUniqueID_note}
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -234,6 +231,11 @@ $(document).ready(function() {
         buttonImage : nv_base_siteurl + "assets/images/calendar.gif",
         buttonImageOnly : true
     });
+
+    $('[data-toggle=phone_note]').on('click', function() {
+        modalShow('{GLANG.phone_note_title}','{GLANG.phone_note_content2}');
+        return!1;
+    })
 });
 
 var LANG = [];

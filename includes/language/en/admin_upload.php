@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -46,7 +46,6 @@ $lang_module['upload_createimage'] = 'Create Image';
 $lang_module['upload_add_files'] = 'Add files';
 $lang_module['type_file'] = 'All file';
 $lang_module['type_image'] = 'File Image';
-$lang_module['type_flash'] = 'Flash';
 $lang_module['rename'] = 'Rename';
 $lang_module['renamefolder'] = 'Rename Folder';
 $lang_module['deletefolder'] = 'Delete Folder';
@@ -146,6 +145,10 @@ $lang_module['strong_mode'] = 'Hight';
 $lang_module['mild_mode'] = 'Medium';
 $lang_module['lite_mode'] = 'Low';
 $lang_module['none_mode'] = 'None';
+$lang_module['strong_mode_note'] = 'A file is considered valid if its MIME type is determined to be valid based on the actual content of the file and matches the file extension.';
+$lang_module['mild_mode_note'] = 'A file is considered valid if its MIME type is determined to be valid based on the actual content of the file or provided by the browser and matches the file extension.';
+$lang_module['lite_mode_note'] = 'A file is considered valid if its MIME type is determined to be valid based on the actual content of the file or provided by the browser, and does not necessarily match the file extension.';
+$lang_module['none_mode_note'] = 'A file is considered valid if its MIME type is determined to be valid based on the actual contents of the file, either provided by the browser or obtained from an ini file, according to the file extension.';
 $lang_module['upload_checking_note'] = 'Your server does not support some functions defined file types. If you chose "Strong", you will not be able to upload files to your host';
 $lang_module['thumbconfig'] = 'Configuring thumbnail';
 $lang_module['thumb_width_height'] = 'Thumbnail size';
@@ -191,3 +194,16 @@ $lang_module['upload_overflow'] = 'Overflow file size';
 $lang_module['upload_overflow_help'] = 'Allows uploading files larger than the maximum file size. Note: Only works when uploading files directly from your computer in the file manager, the Chunk Upload section above is set. The value configured here must not be less than the maximum size of the uploaded file set above';
 $lang_module['nv_mobile_mode_img'] = 'Create image for mobile mode';
 $lang_module['nv_mobile_mode_img_note'] = 'Image width (0 = no creation)';
+$lang_module['webpconvert'] = 'Create file in WEBP format';
+$lang_module['compressimage'] = 'Compress image';
+$lang_module['qualitychange'] = 'Image quality';
+$lang_module['quality'] = 'Quality';
+$lang_module['filesize'] = 'File size';
+$lang_module['original_filesize'] = 'Original file size';
+$lang_module['imgconfig'] = 'Image processing configuration';
+$lang_module['otherconfig'] = 'Other configuration';
+$lang_module['tinify_compress'] = 'Apply image compression with the Tinify tool';
+$lang_module['tinify_compress_note'] = 'The Tinify image compression tool is freely available through the API of the website <a href="https://tinypng.com/developers/reference/php">https://tinypng.com</a> (Limited to 500 API calls in one month).';
+$lang_module['tinify_compress_note2'] = 'To use this tool, you need to add the Tinify package to the composer repository (See instructions <a href="https://github.com/tinify/tinify-php#installation">here</a>)';
+$lang_module['tinify_api_key'] = 'Tinify API Key';
+$lang_module['tinify_api_key_note'] = 'To get Tinify\'s API key, you need to register <a href="https://tinypng.com/developers">here</a>';

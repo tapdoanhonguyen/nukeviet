@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -56,7 +56,12 @@ if ($checkss == $nv_Request->get_string('checkss', 'post')) {
         $array_config_site['site_email'] = '';
     }
 
-    $array_config_site['site_phone'] = nv_substr($nv_Request->get_title('site_phone', 'post', ''), 0, 20);
+    $array_config_site['site_phone'] = nv_substr($nv_Request->get_string('site_phone', 'post', '', false, false), 0, 50);
+    if (preg_match('/\[(.+)\]$/', $array_config_site['site_phone'])) {
+        $array_config_site['site_phone'] = preg_replace_callback('/\[(.+)\]/', function($matches) {
+            return preg_replace('/[^0-9\.\,\;\+\-\*\#\[\]]+/', '', $matches[0]);
+        }, $array_config_site['site_phone']);
+    }
 
     $preg_replace = [
         'pattern' => "/[^a-z\-\_\.\,\;\:\@\/\\s]/i",
@@ -92,7 +97,7 @@ if ($checkss == $nv_Request->get_string('checkss', 'post')) {
         if (!empty($my_domains)) {
             $my_domains = array_map('trim', explode(',', $my_domains));
             $sizeof = sizeof($my_domains);
-            for ($i = 0; $i < $sizeof; $i++) {
+            for ($i = 0; $i < $sizeof; ++$i) {
                 $dm = preg_replace('/^(http|https)\:\/\//', '', $my_domains[$i]);
                 $dm = preg_replace('/^([^\/]+)\/*(.*)$/', '\\1', $dm);
                 $_p = '';
@@ -159,40 +164,7 @@ if ($checkss == $nv_Request->get_string('checkss', 'post')) {
             $array_config_global['error_send_email'] = '';
         }
 
-        $array_config_global['nv_static_url'] = '';
-        $static_url = rtrim($nv_Request->get_string('nv_static_url', 'post'), '/');
-        if (!empty($static_url)) {
-            $static_url = preg_replace('/^(http|https)\:\/\//', '', $static_url);
-            $static_url = preg_replace('/^([^\/]+)\/*(.*)$/', '\\1', $static_url);
-            $_p = '';
-            if (preg_match('/(.*)\:([0-9]+)$/', $static_url, $m)) {
-                $static_url = $m[1];
-                $_p = ':' . $m[2];
-            }
-            $static_url = nv_check_domain(nv_strtolower($static_url));
-            if (!empty($static_url)) {
-                $array_config_global['nv_static_url'] = $static_url . $_p;
-            }
-        }
-
-        $array_config_global['cdn_url'] = '';
-        $cdn_url = rtrim($nv_Request->get_string('cdn_url', 'post'), '/');
-        if (!empty($cdn_url)) {
-            $cdn_url = preg_replace('/^(http|https)\:\/\//', '', $cdn_url);
-            $cdn_url = preg_replace('/^([^\/]+)\/*(.*)$/', '\\1', $cdn_url);
-            $_p = '';
-            if (preg_match('/(.*)\:([0-9]+)$/', $cdn_url, $m)) {
-                $cdn_url = $m[1];
-                $_p = ':' . $m[2];
-            }
-            $cdn_url = nv_check_domain(nv_strtolower($cdn_url));
-            if (!empty($cdn_url)) {
-                $array_config_global['cdn_url'] = $cdn_url . $_p;
-            }
-        }
-
-        $array_config_global['remote_api_access'] = (int) $nv_Request->get_bool('remote_api_access', 'post', false);
-        $array_config_global['remote_api_log'] = (int) $nv_Request->get_bool('remote_api_log', 'post', false);
+        $array_config_global['static_noquerystring'] = (int) $nv_Request->get_bool('static_noquerystring', 'post', false);
         $array_config_global['cookie_notice_popup'] = (int) $nv_Request->get_bool('cookie_notice_popup', 'post', false);
 
         $closed_site = $nv_Request->get_int('closed_site', 'post');
@@ -208,6 +180,8 @@ if ($checkss == $nv_Request->get_string('checkss', 'post')) {
         } else {
             $array_config_global['site_reopening_time'] = 0;
         }
+
+        $array_config_global['unsign_vietwords'] = (int) $nv_Request->get_bool('unsign_vietwords', 'post', false);
 
         $sth = $db->prepare('UPDATE ' . NV_CONFIG_GLOBALTABLE . " SET config_value = :config_value WHERE lang = 'sys' AND module = 'global' AND config_name = :config_name");
         foreach ($array_config_global as $config_name => $config_value) {
@@ -268,8 +242,13 @@ if (!empty($global_config['site_reopening_time'])) {
     list($global_config['reopening_date'], $global_config['reopening_hour'], $global_config['reopening_min']) = explode('|', $tdate);
 }
 
+if (!empty($global_config['site_phone']) and !empty($global_config['site_int_phone'])) {
+    $global_config['site_phone'] .= '[' . $global_config['site_int_phone'] . ']';
+}
+
 $xtpl = new XTemplate('system.tpl', NV_ROOTDIR . '/themes/' . $global_config['module_theme'] . '/modules/' . $module_file);
 $xtpl->assign('LANG', $lang_module);
+$xtpl->assign('GLANG', $lang_global);
 $xtpl->assign('DATA', $global_config);
 $xtpl->assign('NV_BASE_ADMINURL', NV_BASE_ADMINURL);
 $xtpl->assign('NV_NAME_VARIABLE', NV_NAME_VARIABLE);
@@ -301,9 +280,9 @@ if (defined('NV_IS_GODADMIN')) {
     $xtpl->assign('CHECKED_ERROR_SET_LOGS', ($array_config_global['error_set_logs']) ? ' checked="checked"' : '');
     $xtpl->assign('CHECKED_REWRITE_ENABLE', ($array_config_global['rewrite_enable'] == 1) ? ' checked ' : '');
     $xtpl->assign('CHECKED_REWRITE_OPTIONAL', ($array_config_global['rewrite_optional'] == 1) ? ' checked ' : '');
-    $xtpl->assign('CHECKED_REMOTE_API_ACCESS', ($array_config_global['remote_api_access'] == 1) ? ' checked ' : '');
-    $xtpl->assign('CHECKED_REMOTE_API_LOG', ($array_config_global['remote_api_log'] == 1) ? ' checked ' : '');
     $xtpl->assign('CHECKED_COOKIE_NOTICE_POPUP', ($array_config_global['cookie_notice_popup'] == 1) ? ' checked ' : '');
+    $xtpl->assign('STATIC_NOQUERYSTRING_CHECKED', ($array_config_global['static_noquerystring'] == 1) ? ' checked ' : '');
+    $xtpl->assign('CHECKED_UNSIGN_VIETWORDS', !empty($array_config_global['unsign_vietwords']) ? ' checked="checked"' : '');
 
     $xtpl->assign('MY_DOMAINS', $array_config_global['my_domains']);
 

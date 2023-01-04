@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -20,14 +20,13 @@ if (defined('NV_IS_USER') and !defined('ACCESS_ADDUS')) {
 
 $page_url = NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name . '&' . NV_OP_VARIABLE . '=' . $op;
 if (defined('ACCESS_ADDUS')) {
-    $page_url .= '/'. $group_id;
+    $page_url .= '/' . $group_id;
 }
 
 // Ngung dang ki thanh vien
 if (!$global_config['allowuserreg']) {
     $page_title = $lang_module['register'];
     $key_words = $module_info['keywords'];
-    $mod_title = $lang_module['register'];
 
     $contents = user_info_exit($lang_module['no_allowuserreg']);
     $contents .= '<meta http-equiv="refresh" content="5;url=' . nv_url_rewrite(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name, true) . '" />';
@@ -85,7 +84,6 @@ if (defined('NV_IS_USER_FORUM')) {
  * reg_result()
  *
  * @param mixed $array
- * @return
  */
 function reg_result($array)
 {
@@ -155,7 +153,6 @@ if (defined('NV_IS_USER') and defined('ACCESS_ADDUS')) {
 // Dang ky thong thuong
 $page_title = $lang_module['register'];
 $key_words = $module_info['keywords'];
-$mod_title = $lang_module['register'];
 
 $array_field_config = [];
 $result_field = $db->query('SELECT * FROM ' . NV_MOD_TABLE . '_field ORDER BY weight ASC');
@@ -278,7 +275,10 @@ if ($checkss == $array_register['checkss']) {
         'userid' => 0
     ];
     $userid = 0;
-    require NV_ROOTDIR . '/modules/users/fields.check.php';
+    $check = fieldsCheck($custom_fields, $array_register, $query_field, $valid_field, $userid);
+    if ($check['status'] == 'error') {
+        nv_jsonOutput($check);
+    }
 
     $password = $crypt->hash_password($array_register['password'], $global_config['hashprefix']);
     $checknum = nv_genpass(10);
@@ -321,7 +321,7 @@ if ($checkss == $array_register['checkss']) {
         $data_insert['question'] = $array_register['question'];
         $data_insert['answer'] = $array_register['answer'];
         $data_insert['checknum'] = $checknum;
-        $data_insert['users_info'] = nv_base64_encode(serialize($query_field));
+        $data_insert['users_info'] = json_encode($query_field, JSON_UNESCAPED_UNICODE);
         $data_insert['idsite'] = $global_config['idsite'];
         $userid = $db->insert_id($sql, 'userid', $data_insert);
 
@@ -447,8 +447,8 @@ if ($checkss == $array_register['checkss']) {
             $db->query('UPDATE ' . NV_MOD_TABLE . '_groups SET numbers = numbers+1 WHERE group_id=' . (defined('ACCESS_ADDUS') ? $group_id : ($global_users_config['active_group_newusers'] ? 7 : 4)));
             $subject = $lang_module['account_register'];
             $_url = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name, NV_MY_DOMAIN);
-            $message = sprintf($lang_module['account_register_info'], $array_register['first_name'], $global_config['site_name'], $_url, $array_register['username']);
-            nv_sendmail([
+            $message = sprintf($lang_module['account_register_info'], $array_register['first_name'], $global_config['site_name'], $_url, $array_register['username'], $array_register['email']);
+            nv_sendmail_async([
                 $global_config['site_name'],
                 $global_config['site_email']
             ], $array_register['email'], $subject, $message);
@@ -463,7 +463,8 @@ if ($checkss == $array_register['checkss']) {
                     'last_agent' => '',
                     'last_ip' => '',
                     'last_login' => 0,
-                    'last_openid' => ''
+                    'last_openid' => '',
+                    'language' => ''
                 ];
                 validUserLog($array_user, 1, '');
 

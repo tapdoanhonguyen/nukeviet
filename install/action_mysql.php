@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -19,6 +19,63 @@ $result = $db->query("SHOW TABLE STATUS LIKE '" . $db_config['prefix'] . "\_%'")
 while ($item = $result->fetch()) {
     $sql_drop_table[] = 'DROP TABLE ' . $item['name'];
 }
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_api_role (
+  role_id SMALLINT(4) NOT NULL AUTO_INCREMENT,
+  role_md5title CHAR(32) NOT NULL,
+  role_type ENUM('private','public') NOT NULL DEFAULT 'private',
+  role_object ENUM('admin','user') NOT NULL DEFAULT 'admin',
+  role_title VARCHAR(250) NOT NULL DEFAULT '',
+  role_description VARCHAR(250) NOT NULL DEFAULT '',
+  role_data TEXT NOT NULL,
+  log_period INT(11) NOT NULL DEFAULT 0,
+  flood_rules TEXT NOT NULL,
+  addtime INT(11) NOT NULL DEFAULT '0',
+  edittime INT(11) NOT NULL DEFAULT '0',
+  status TINYINT(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (role_id),
+  UNIQUE KEY role_md5title (role_md5title)
+) ENGINE=MyISAM";
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_api_role_credential (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  userid INT(11) UNSIGNED NOT NULL,
+  role_id SMALLINT(4) UNSIGNED NOT NULL DEFAULT '0',
+  access_count INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  last_access INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  addtime INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  endtime INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  quota INT(20) UNSIGNED NOT NULL DEFAULT '0',
+  status TINYINT(1) UNSIGNED NOT NULL DEFAULT '1',
+  PRIMARY KEY (id),
+  UNIQUE KEY userid_role_id (userid, role_id)
+) ENGINE=MyISAM";
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_api_role_logs (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  role_id SMALLINT(4) NOT NULL DEFAULT '0',
+  userid INT(11) NOT NULL DEFAULT '0',
+  command CHAR(100) NOT NULL DEFAULT '',
+  log_time INT(11) NOT NULL DEFAULT '0',
+  log_ip CHAR(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (id)
+) ENGINE=MyISAM";
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_api_user (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  userid INT(11) UNSIGNED NOT NULL,
+  ident VARCHAR(50) NOT NULL DEFAULT '',
+  secret VARCHAR(250) NOT NULL DEFAULT '',
+  ips TEXT NOT NULL,
+  method ENUM('none','password_verify','md5_verify') NOT NULL DEFAULT 'password_verify',
+  addtime INT(11) NOT NULL DEFAULT '0',
+  edittime INT(11) NOT NULL DEFAULT '0',
+  last_access INT(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (id),
+  UNIQUE KEY userid_method (userid, method),
+  UNIQUE KEY ident (ident),
+	UNIQUE KEY secret (secret)
+) ENGINE=MyISAM";
 
 $sql_create_table[] = 'CREATE TABLE ' . NV_AUTHORS_GLOBALTABLE . " (
   admin_id int(11) unsigned NOT NULL,
@@ -79,32 +136,6 @@ $sql_create_table[] = 'CREATE TABLE ' . NV_AUTHORS_GLOBALTABLE . "_oauth (
   UNIQUE KEY admin_id (admin_id, oauth_server, oauth_uid),
   KEY oauth_email (oauth_email)
 ) ENGINE=MyISAM COMMENT 'Bảng lưu xác thực 2 bước từ oauth của admin'";
-
-$sql_create_table[] = 'CREATE TABLE ' . NV_AUTHORS_GLOBALTABLE . "_api_role (
-  role_id smallint(4) NOT NULL AUTO_INCREMENT,
-  role_title varchar(250) NOT NULL DEFAULT '',
-  role_description text NOT NULL,
-  role_data text NOT NULL,
-  addtime int(11) NOT NULL DEFAULT '0',
-  edittime int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (role_id)
-) ENGINE=MyISAM COMMENT 'Bảng lưu quyền truy cập API'";
-
-$sql_create_table[] = 'CREATE TABLE ' . NV_AUTHORS_GLOBALTABLE . "_api_credential (
-  admin_id int(11) unsigned NOT NULL,
-  credential_title varchar(255) NOT NULL DEFAULT '',
-  credential_ident varchar(50) NOT NULL DEFAULT '',
-  credential_secret varchar(250) NOT NULL DEFAULT '',
-  credential_ips varchar(255) NOT NULL DEFAULT '',
-  auth_method ENUM('none','password_verify') NOT NULL DEFAULT 'password_verify' COMMENT 'Phương thức xác thực',
-  api_roles varchar(255) NOT NULL DEFAULT '',
-  addtime int(11) NOT NULL DEFAULT '0',
-  edittime int(11) NOT NULL DEFAULT '0',
-  last_access int(11) NOT NULL DEFAULT '0',
-  UNIQUE KEY credential_ident (credential_ident),
-  UNIQUE KEY credential_secret (credential_secret),
-  KEY admin_id (admin_id)
-) ENGINE=MyISAM COMMENT 'Bảng lưu key API của quản trị'";
 
 $sql_create_table[] = 'CREATE TABLE ' . NV_CONFIG_GLOBALTABLE . " (
   lang varchar(3) NOT NULL DEFAULT 'sys',
@@ -244,7 +275,7 @@ $sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_upload_file (
   name varchar(245) NOT NULL,
   ext varchar(10) NOT NULL DEFAULT '',
   type varchar(5) NOT NULL DEFAULT '',
-  filesize int(11) NOT NULL DEFAULT '0',
+  filesize double NOT NULL DEFAULT '0',
   src varchar(255) NOT NULL DEFAULT '',
   srcwidth int(11) NOT NULL DEFAULT '0',
   srcheight int(11) NOT NULL DEFAULT '0',
@@ -299,4 +330,28 @@ $sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_notification (
   KEY send_to (send_to),
   KEY admin_view_allowed (admin_view_allowed),
   KEY logic_mode (logic_mode)
+) ENGINE=MyISAM";
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_push (
+  id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  receiver_grs VARCHAR(1000) NOT NULL DEFAULT '',
+  receiver_ids VARCHAR(1000) NOT NULL DEFAULT '',
+  sender_role ENUM('system','group','admin') NOT NULL DEFAULT 'system',
+  sender_group MEDIUMINT(8) UNSIGNED NOT NULL DEFAULT '0',
+  sender_admin MEDIUMINT(8) UNSIGNED NOT NULL DEFAULT '0',
+  message TEXT NULL DEFAULT NULL,
+  link VARCHAR(500) NOT NULL DEFAULT '',
+  add_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  exp_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  PRIMARY KEY (id)
+) ENGINE=MyISAM";
+
+$sql_create_table[] = 'CREATE TABLE ' . $db_config['prefix'] . "_push_status (
+  pid INT(11) UNSIGNED NOT NULL,
+  userid INT(11) UNSIGNED NOT NULL,
+  shown_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  viewed_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  favorite_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  hidden_time INT(11) UNSIGNED NOT NULL DEFAULT '0',
+  UNIQUE KEY pid_userid (pid, userid)
 ) ENGINE=MyISAM";

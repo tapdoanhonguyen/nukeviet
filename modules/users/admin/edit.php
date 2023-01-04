@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -91,7 +91,7 @@ if ($nv_Request->isset_request('psr', 'post')) {
             $subject = $type == 1 ? $lang_module['pass_reset_request_subject1'] : $lang_module['pass_reset_request_subject2'];
             $_url = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name, NV_MY_DOMAIN);
             $message = $type == 1 ? sprintf($lang_module['pass_reset_request_info1'], $full_name, $global_config['site_name'], $_url) : sprintf($lang_module['pass_reset_request_info2'], $full_name, $global_config['site_name'], $_url);
-            @nv_sendmail([$global_config['site_name'], $global_config['site_email']], $row['email'], $subject, $message);
+            @nv_sendmail_async([$global_config['site_name'], $global_config['site_email']], $row['email'], $subject, $message);
         }
         exit($lang_module['pass_reset_request_sent']);
     }
@@ -250,8 +250,12 @@ if ($nv_Request->isset_request('confirm', 'post')) {
 
     // Kiểm tra các trường dữ liệu tùy biến + Hệ thống
     $query_field = [];
+    $valid_field = [];
     if (!empty($array_field_config)) {
-        require NV_ROOTDIR . '/modules/users/fields.check.php';
+        $check = fieldsCheck($custom_fields, $_user, $query_field, $valid_field, $userid);
+        if ($check['status'] == 'error') {
+            nv_jsonOutput($check);
+        }
     }
 
     if (!empty($_user['password1'])) {
@@ -419,7 +423,7 @@ if ($nv_Request->isset_request('confirm', 'post')) {
             $message .= sprintf($lang_module['adduser_register_info3'], $_user['password1']);
         }
         $message .= sprintf($lang_module['adduser_register_info4'], $pass_reset_request, $global_config['site_name']);
-        @nv_sendmail([$global_config['site_name'], $global_config['site_email']], $_user['email'], $subject, $message);
+        @nv_sendmail_async([$global_config['site_name'], $global_config['site_email']], $_user['email'], $subject, $message);
     }
 
     nv_insert_logs(NV_LANG_DATA, $module_name, 'log_edit_user', 'userid ' . $userid, $admin_info['userid']);

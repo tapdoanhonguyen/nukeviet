@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -148,7 +148,8 @@ $lang_module['proxy_blocker_2'] = 'Medium';
 $lang_module['proxy_blocker_3'] = 'High';
 $lang_module['str_referer_blocker'] = 'Activate block referers';
 $lang_module['my_domains'] = 'Domains';
-$lang_module['searchEngineUniqueID'] = 'Google search Engine ID<br />(format 000329275761967753447:sr7yxqgv294 , <a href="http://nukeviet.vn/vi/faq/Su-dung-Google-Custom-Search-tren-NukeViet/" target="_blank">view details</a>)';
+$lang_module['searchEngineUniqueID'] = 'Google search Engine ID';
+$lang_module['searchEngineUniqueID_note'] = 'Format 000329275761967753447:sr7yxqgv294 , <a href="http://nukeviet.vn/vi/faq/Su-dung-Google-Custom-Search-tren-NukeViet/" target="_blank">view details</a>';
 $lang_module['variables'] = 'Setup cookie session';
 $lang_module['cookie_prefix'] = 'Cookie prefix';
 $lang_module['session_prefix'] = 'Session\'s prefix';
@@ -261,11 +262,11 @@ $lang_module['ftp_error_full'] = 'Please enter all the parameters to auto detect
 $lang_module['ftp_error_detect_root'] = 'Can not find any suitable parameters, check your username and password';
 $lang_module['ftp_error_support'] = 'Your server is blocking or does not support FTP library, please contact the provider to be enabled.';
 $lang_module['static_url'] = 'Hosting of static files';
-$lang_module['static_url_note'] = 'Leave it blank or fill in the hosting domain name that is not one of the site\'s domains or their subdomains. The directory structure of this hosting needs to be identical to the site\'s structure';
-$lang_module['cdn_url'] = 'Hosting CDN for javascript, css';
-$lang_module['remote_api_access'] = 'Enable Remote API';
-$lang_module['remote_api_access_help'] = 'Disabling all API access from outside will be blocked. Internal APIs are still used normally';
-$lang_module['remote_api_log'] = 'Enable Remote API Logging';
+$lang_module['static_url_note'] = 'Leave this field blank, or fill in the URL of a static hosting host whose domain is not one of the site\'s domains or subdomains. URL should start with <code>http://</code>, <code>https://</code> or <code>//</code>';
+$lang_module['cdn_url'] = 'CDN for static Files';
+$lang_module['assets_cdn'] = 'Using static files available on <a href="https://github.com/nukeviet/nukeviet" target="_blank">NukeViet source code Repository</a> combined with <a href="https://www.jsdelivr.com/" target="_blank">jsDelivr</a> CDN network';
+$lang_module['assets_cdn_note'] = 'Relative URLs of <strong>js, css, svg, woff, woff2, ttf</strong> files in the <strong>%s</strong> directories will be replaced with the absolute URLs of the corresponding files, which are available in the NukeViet Source Code Repository (e.g. URL: <code>%s</code> will be changed to: <code>%s</code>)';
+$lang_module['not_apply_to_localhost'] = 'This configuration is not available in the localhost environment';
 
 $lang_module['plugin'] = 'Set up Plugin';
 $lang_module['plugin_file'] = 'File';
@@ -320,6 +321,7 @@ $lang_module['cron_launcher_server'] = 'Server Side Cron Service';
 $lang_module['cron_launcher_server_note'] = 'You can copy the code below and paste it into your crontab.';
 $lang_module['cron_last_time'] = 'The last check and execution of cronjobs was at %s';
 $lang_module['cron_next_time'] = 'The next check and execution of cronjobs is expected at %s';
+$lang_module['cron_list'] = 'Cronjobs';
 $lang_module['cors'] = 'Cross-Site config';
 $lang_module['cors_exceptions'] = 'Blocking does not apply to the following cases';
 $lang_module['cors_site_restrict'] = 'Protect the user area';
@@ -521,3 +523,30 @@ $lang_module['change_confirm'] = 'The content in the configuration file that you
 $lang_module['confirm_change'] = 'Confirm Change';
 $lang_module['changes_saved'] = 'Changes have been saved';
 $lang_module['changes_not_saved'] = 'Changes have not been saved for technical reasons';
+$lang_module['static_noquerystring'] = 'Don\'t add query string to the end of static files';
+$lang_module['cdn_backendhost'] = 'CDN and backend hosting';
+$lang_module['dont_use'] = 'Do not use CDN';
+$lang_module['default'] = 'Default';
+$lang_module['bycountry'] = 'CDN by Country';
+$lang_module['by_default'] = 'By default';
+$lang_module['url'] = 'URL';
+$lang_module['countries'] = 'Countries';
+$lang_module['cdn_notes'] = '<ul><li>URL should start with <code>http://</code>, <code>https://</code> or <code>//</code></li><li>If <strong>Default</strong> is selected, this CDN will be used for all countries, except for countries where a custom CDN is specified or countries marked &quot;Do not use CDN&quot; (shown on the <strong>CDN by Country</strong> page)</li></ul>';
+$lang_module['add_cdn'] = 'Add CDN';
+$lang_module['remove_cdn'] = 'Remove this CDN';
+$lang_module['select_countries'] = 'Select countries';
+$lang_module['unsign_vietwords'] = 'Support for searching for unsigned Vietnamese words';
+$lang_module['unsign_vietwords_note'] = 'This feature should not be enabled if the database for the search is too large';
+$lang_module['custom'] = 'Custom configuration';
+$lang_module['custom_configs'] = 'Custom configuration for language: %s';
+$lang_module['config_key'] = 'Configuration Key';
+$lang_module['config_value'] = 'Configuration Value';
+$lang_module['config_key_note'] = 'Only keys matching the pattern <code>[a-zA-Z][a-zA-Z0-9_]{0,29}</code> are accepted.';
+$lang_module['custom_configs_note'] = 'The custom configuration is output as: <code>$global_config[\'custom_configs\'][\'Configuration Key\'] = \'Configuration Value\'</code>';
+$lang_module['addconfig'] = 'Add line';
+$lang_module['passshow_button'] = '&laquo;Show/hide password&raquo; button integration';
+$lang_module['passshow_button_0'] = 'Not integrated';
+$lang_module['passshow_button_1'] = 'Always integrated';
+$lang_module['passshow_button_2'] = 'Integrated only for registered users';
+$lang_module['passshow_button_3'] = 'Integrated only for admins';
+$lang_module['config_description'] = 'Configuration notes';

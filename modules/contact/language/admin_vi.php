@@ -65,7 +65,7 @@ $lang_module['error_title'] = 'Lỗi bài viết chưa có tiêu đề';
 $lang_module['saveok'] = 'Cập nhật bài viết thành công';
 $lang_module['list_admin_row_title'] = 'Danh sách các admin trong bộ phận';
 $lang_module['name_admin_row_title'] = 'Tên đầy đủ';
-$lang_module['username_admin_row_title'] = 'Tên đăng nhập';
+$lang_module['username_admin_row_title'] = 'Bí danh';
 $lang_module['bt_send_row_title'] = 'Gửi';
 $lang_module['no_content_send_title'] = 'Không gửi được email vì không có nội dung phản hồi';
 $lang_module['admin_view_title'] = 'Được xem phản hồi';
@@ -105,7 +105,7 @@ $lang_module['error_mail_empty'] = 'Lỗi: Bạn chưa nhập email';
 
 $lang_module['config'] = 'Cấu hình module';
 $lang_module['config_sendcopymode'] = 'Quyền gửi bản sao tới email';
-$lang_module['config_sendcopymode0'] = 'Thành viên đã xác thực email';
+$lang_module['config_sendcopymode0'] = 'Người dùng đã xác thực email';
 $lang_module['config_sendcopymode1'] = 'Tất cả người dùng';
 
 $lang_module['processed_by'] = 'Người thực hiện: ';

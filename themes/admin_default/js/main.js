@@ -188,7 +188,10 @@ $(document).ready(function() {
 
     //XSSsanitize
     $('body').on('click', '[type=submit]:not([name])', function(e) {
-        btnClickSubmit(e, $(this).parents('form'))
+        var form = $(this).parents('form');
+        if (!$('[name=submit]', form).length) {
+            btnClickSubmit(e,form)
+        }
     });
 
     $(document).on('click', function(e) {
@@ -206,4 +209,29 @@ $(document).ready(function() {
     $('[data-toggle="tooltip"]').tooltip({
         container: 'body'
     });
+
+    // countdown
+    if ($('#countdown').length) {
+        var countdown = $('#countdown'),
+            distance = parseInt(countdown.data('duration')),
+            countdownObj = setInterval(function() {
+            distance = distance - 1000;
+
+            var hours = Math.floor(distance / (1000 * 60 * 60)),
+                minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            if (minutes < 10) {
+                minutes = '0' + minutes
+            };
+            if (seconds < 10) {
+                seconds = '0' + seconds
+            };
+            countdown.text(hours + ':' + minutes + ':' + seconds)
+
+            if (distance <= 0) {
+                clearInterval(countdownObj);
+                window.location.reload()
+            }
+        }, 1000);
+    }
 });

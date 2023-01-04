@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -107,7 +107,7 @@ $lang_module['adminip'] = 'Admin IP';
 $lang_module['adminip_ip'] = 'IP';
 $lang_module['adminip_timeban'] = 'Start';
 $lang_module['adminip_timeendban'] = 'Finish';
-$lang_module['adminip_add'] = 'Add IP';
+$lang_module['adminip_add'] = 'Add accepted IP address in admin area';
 $lang_module['adminip_address'] = 'Address';
 $lang_module['adminip_begintime'] = 'Start';
 $lang_module['adminip_endtime'] = 'Finish';
@@ -125,8 +125,8 @@ $lang_module['adminip_error_validip'] = 'Invalid IP';
 $lang_module['title_username'] = 'Manage firewall account';
 $lang_module['admfirewall'] = 'Check firewall';
 $lang_module['block_admin_ip'] = 'Check IP to access to administration area';
-$lang_module['username_add'] = 'Add';
-$lang_module['username_edit'] = 'Edit';
+$lang_module['username_add'] = 'Add a firewall account';
+$lang_module['username_edit'] = 'Edit a firewall account';
 $lang_module['nicknam_delete_confirm'] = 'Are you sure you want to remove this account?';
 $lang_module['passwordsincorrect'] = 'Password does not match';
 $lang_module['nochangepass'] = 'Leave password fields blank if you don\'t want to change password';
@@ -134,6 +134,8 @@ $lang_module['rule_user'] = 'Use only characters a-zA-Z0-9_- for account';
 $lang_module['rule_pass'] = 'Use only characters a-zA-Z0-9_- for password';
 $lang_module['spadmin_add_admin'] = 'Allows General Administrator to create and modify the rights of modules administrator';
 $lang_module['authors_detail_main'] = 'Show detailed information of the administrator account';
+$lang_module['admin_login_duration'] = 'Duration of an administrator login session';
+$lang_module['admin_login_duration_note'] = '0 = Duration not considered';
 $lang_module['admin_check_pass_time'] = 'Time to check your password, if admin not using the browser';
 $lang_module['add_user'] = 'Appoint a member';
 $lang_module['add_select'] = 'Select';
@@ -171,53 +173,6 @@ $lang_module['2step_oauth_add_mail_content'] = 'Hello, %1$s!<br /><br />Administ
 $lang_module['2step_oauth_del_mail_subject'] = 'Configuring Two-Step Authentication with Oauth has been canceled';
 $lang_module['2step_oauth_del_mail_content'] = 'Hello, %1$s!<br /><br />Administration of the site %2$s would like to inform:<br />At your request, 2-Step Verification using Oauth has been successfully canceled. From now on, you cannot use the account %3$s of the provider %4$s to authenticate in the site admin area.<br /><br />Site administration';
 $lang_module['2step_oauth_dels_mail_content'] = 'Hello, %1$s!<br /><br />Administration of the site %2$s would like to inform:<br />At your request, 2-Step Verification using Oauth has been successfully canceled. From now on, you cannot use the accounts %3$s to authenticate in the site admin area.<br /><br />Site administration';
-
 $lang_module['ip_version'] = 'IP Version';
-$lang_module['api_addtime'] = 'Add time';
-$lang_module['api_edittime'] = 'Edit time';
-$lang_module['api_roles'] = 'Manage Roles API';
-$lang_module['api_roles_list'] = 'List of API Roles';
-$lang_module['api_roles_empty'] = 'No API Role yet added. Please complete the form below to add the new API Role';
-$lang_module['api_roles_add'] = 'Create new API Role';
-$lang_module['api_roles_edit'] = 'Edit API Role';
-$lang_module['api_roles_title'] = 'Name';
-$lang_module['api_roles_description'] = 'Description';
-$lang_module['api_roles_allowed'] = 'APIs allowed to access';
-$lang_module['api_roles_error_title'] = 'Error: The API Role name was not entered';
-$lang_module['api_roles_error_exists'] = 'Error: This API Role Name already exists, please enter a different name to avoid confusion';
-$lang_module['api_roles_error_role'] = 'Error: No APIs selected';
-$lang_module['api_roles_checkall'] = 'Select all';
-$lang_module['api_roles_uncheckall'] = 'Deselect all';
-$lang_module['api_roles_detail'] = 'Details APIs of';
-$lang_module['api_role_notice'] = 'Note: Depending on the level of the licensed administrator account the APIs used in each Role API will be redefined.';
-$lang_module['api_role_notice_lang'] = 'System APIs are valid for all languages. APIs of the module are only valid for the current language.';
-$lang_module['api_of_system'] = 'System';
-$lang_module['api_cr'] = 'API Credential';
-$lang_module['api_cr_error_role_empty'] = 'No API Role is created, please create a Role API first. The system will automatically switch to the Role API creation page in a moment';
-$lang_module['api_remote_off'] = 'Remote API <strong>is off</strong>, accounts with API access below will not be able to place API calls. To make an API call, <strong><a href="%s" target="_blank">enable the Remote API here</a></strong>';
-$lang_module['api_cr_last_access_none'] = 'None';
-$lang_module['api_cr_last_access'] = 'Recently used';
-$lang_module['api_cr_add'] = 'Add API Credential';
-$lang_module['api_cr_edit'] = 'Edit API Credential';
-$lang_module['api_cr_title'] = 'Describe the rights';
-$lang_module['api_cr_for_admin'] = 'Select administrator';
-$lang_module['api_cr_roles'] = 'Select API Role';
-$lang_module['api_cr_roles1'] = 'API Role';
-$lang_module['api_cr_error_title'] = 'Error: Please enter an API access description';
-$lang_module['api_cr_error_admin'] = 'Error: Please select administrator';
-$lang_module['api_cr_error_roles'] = 'Error: Please select the API Role';
-$lang_module['api_cr_result'] = 'Here is the access key and the secret code. You need to keep the secret code in a safe place before leaving this screen. After leaving this screen you will not be able to retrieve the secret code. If you lose the access and secret code you need to recreate other API access.';
-$lang_module['api_cr_credential_ident'] = 'Access keys';
-$lang_module['api_cr_credential_secret'] = 'Secret code';
-$lang_module['api_cr_back'] = 'Done copied';
-$lang_module['api_cr_notice'] = 'Note: Keep your secret code secret and special access keys secret. If the secret code and the access key are exposed, the saboteurs can perform undesirable operations';
-$lang_module['api_cr_ips'] = 'IP allowed';
-$lang_module['credential_ips_help'] = 'Enter one IP per line, api call from these IPs are allowed';
-$lang_module['api_cr_auth_method'] = 'Authentication method';
-$lang_module['api_cr_auth_method_password_verify'] = 'password_verify (recommend)';
-$lang_module['api_cr_auth_method_none'] = 'None, for development';
-$lang_module['api_System'] = 'System functions';
-$lang_module['api_System_SendMail'] = 'Send email';
 $lang_module['other_info'] = 'Other information';
-$lang_module['value_copied'] = 'Value has been copied';
 $lang_module['admin_user_logout'] = 'Forced logout from user account when logged in as administrator';

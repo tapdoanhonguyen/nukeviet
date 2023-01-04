@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -321,7 +321,7 @@ if ((int) $row['safemode'] > 0) {
                 $name = implode(' ', $name);
                 $sitename = '<a href="' . NV_MY_DOMAIN . NV_BASE_SITEURL . '">' . $global_config['site_name'] . '</a>';
                 $message = sprintf($lang_module['safe_send_content'], $name, $sitename, $row['safekey']);
-                @nv_sendmail([
+                @nv_sendmail_async([
                     $global_config['site_name'],
                     $global_config['site_email']
                 ], $row['email'], $lang_module['safe_send_subject'], $message);
@@ -397,13 +397,17 @@ if (!defined('ACCESS_EDITUS') or (defined('ACCESS_EDITUS') and defined('ACCESS_P
 if (!defined('ACCESS_EDITUS')) {
     $types[] = '2step';
 }
-// Thành viên có quyền đổi tên đăng nhập
+// Thành viên có quyền đổi bí danh
 if ($array_data['allowloginchange'] and !defined('ACCESS_EDITUS')) {
     $types[] = 'username';
 }
 // Thành viên có quyền đổi email
 if ($array_data['allowmailchange'] and !defined('ACCESS_EDITUS')) {
     $types[] = 'email';
+}
+// Thành viên đổi ngôn ngữ giao diện
+if ($global_config['lang_multi'] and !defined('ACCESS_EDITUS')) {
+    $types[] = 'langinterface';
 }
 // Thành viên quản lý OpenID
 if (defined('NV_OPENID_ALLOWED') and !defined('ACCESS_EDITUS')) {
@@ -531,7 +535,7 @@ if (in_array('openid', $types, true) and $nv_Request->isset_request('server', 'g
     $url = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=editinfo/openid', NV_MY_DOMAIN);
     $message = defined('ACCESS_EDITUS') ? $lang_module['security_alert_openid_add'] : $lang_module['security_alert_openid_add1'];
     $message = sprintf($message, nv_ucfirst($server), $row['username'], $url);
-    nv_sendmail([
+    nv_sendmail_async([
         $global_config['site_name'],
         $global_config['site_email']
     ], $row['email'], $lang_module['security_alert'], $message);
@@ -565,7 +569,12 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         'sig' => 1
     ]);
 
-    require NV_ROOTDIR . '/modules/users/fields.check.php';
+    $query_field = [];
+    $valid_field = [];
+    $check = fieldsCheck($custom_fields, $array_data, $query_field, $valid_field);
+    if ($check['status'] == 'error') {
+        nv_jsonOutput($check);
+    }
 
     if (empty($array_data['first_name'])) {
         $array_data['first_name'] = !empty($row['first_name']) ? $row['first_name'] : $row['username'];
@@ -626,6 +635,23 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
     }
 } elseif ($checkss == $array_data['checkss'] and $array_data['type'] == 'avatar') {
     // Avatar
+} elseif ($checkss == $array_data['checkss'] and $array_data['type'] == 'langinterface') {
+    $langinterface = $nv_Request->get_title('langinterface', 'post', '');
+    if (!empty($langinterface) and (!preg_match('/^[a-z]{2}$/', $langinterface) or !file_exists(NV_ROOTDIR . '/includes/language/' . $langinterface . '/global.php'))) {
+        $langinterface = '';
+    }
+    if ($langinterface != $row['language']) {
+        $stmt = $db->prepare('UPDATE ' . NV_MOD_TABLE . ' SET language= :language WHERE userid=' . $edit_userid);
+        $stmt->bindParam(':language', $langinterface, PDO::PARAM_STR);
+        $stmt->execute();
+
+        updateUserCookie(['language' => $langinterface]);
+    }
+    nv_jsonOutput([
+        'status' => 'ok',
+        'input' => nv_url_rewrite($page_url . '/langinterface', true),
+        'mess' => $lang_module['editinfo_ok']
+    ]);
 } elseif ($checkss == $array_data['checkss'] and $array_data['type'] == 'username') {
     // Username
     $nv_username = nv_substr($nv_Request->get_title('username', 'post', '', 1), 0, $global_config['nv_unickmax']);
@@ -668,7 +694,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
     $name = implode(' ', $name);
     $sitename = '<a href="' . NV_MY_DOMAIN . NV_BASE_SITEURL . '">' . $global_config['site_name'] . '</a>';
     $message = sprintf($lang_module['edit_mail_content'], $name, $sitename, $lang_global['username'], $nv_username);
-    @nv_sendmail([
+    @nv_sendmail_async([
         $global_config['site_name'],
         $global_config['site_email']
     ], $row['email'], $lang_module['edit_mail_subject'], $message);
@@ -760,7 +786,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         $name = implode(' ', $name);
         $sitename = '<a href="' . NV_MY_DOMAIN . NV_BASE_SITEURL . '">' . $global_config['site_name'] . '</a>';
         $message = sprintf($lang_module['email_active_info'], $name, $sitename, $verikey, $p);
-        @nv_sendmail([
+        @nv_sendmail_async([
             $global_config['site_name'],
             $global_config['site_email']
         ], $nv_email, $lang_module['email_active'], $message);
@@ -821,11 +847,11 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         $message = sprintf($lang_module['edit_mail_content'], $name, $sitename, $lang_global['email'], $nv_email);
 
         // Gửi thư cho cả email mới và email cũ
-        @nv_sendmail([
+        @nv_sendmail_async([
             $global_config['site_name'],
             $global_config['site_email']
         ], $nv_email, $lang_module['edit_mail_subject'], $message);
-        @nv_sendmail([
+        @nv_sendmail_async([
             $global_config['site_name'],
             $global_config['site_email']
         ], $row['email'], $lang_module['edit_mail_subject'], $message);
@@ -909,7 +935,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         $name = implode(' ', $name);
         $sitename = '<a href="' . NV_MY_DOMAIN . NV_BASE_SITEURL . '">' . $global_config['site_name'] . '</a>';
         $message = sprintf($lang_module['edit_mail_content'], $name, $sitename, $lang_global['password'], $new_password);
-        @nv_sendmail([
+        @nv_sendmail_async([
             $global_config['site_name'],
             $global_config['site_email']
         ], $row['email'], $lang_module['edit_mail_subject'], $message);
@@ -940,7 +966,10 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         'answer' => 1
     ]);
 
-    require NV_ROOTDIR . '/modules/users/fields.check.php';
+    $check = fieldsCheck($custom_fields, $array_data, $query_field, $valid_field);
+    if ($check['status'] == 'error') {
+        nv_jsonOutput($check);
+    }
 
     if (empty($nv_password) or !$crypt->validate_password($nv_password, $row['password'])) {
         nv_jsonOutput([
@@ -990,7 +1019,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         $url = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=editinfo/openid', NV_MY_DOMAIN);
         $message = defined('ACCESS_EDITUS') ? $lang_module['security_alert_openid_delete'] : $lang_module['security_alert_openid_delete1'];
         $message = sprintf($message, implode(', ', array_unique($openid_mess)), $row['username'], $url);
-        nv_sendmail([
+        nv_sendmail_async([
             $global_config['site_name'],
             $global_config['site_email']
         ], $row['email'], $lang_module['security_alert'], $message);
@@ -1024,6 +1053,13 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
     if (!empty($in_groups_del)) {
         foreach ($in_groups_del as $gid) {
             nv_groups_del_user($gid, $edit_userid, $module_data);
+            if (in_array($gid, $groups_list['share'], true)) {
+                add_push([
+                    'receiver_ids' => [$edit_userid],
+                    'message' => sprintf($lang_module['info_when_leaving_group'], $groups_list['all'][$gid]['title']),
+                    'exp_time' => NV_CURRENTTIME + 86400
+                ]);
+            }
         }
     }
 
@@ -1049,9 +1085,17 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
                             ];
                             $url_group = urlRewriteWithDomain(NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&amp;' . NV_NAME_VARIABLE . '=' . $module_name . '&amp;' . NV_OP_VARIABLE . '=groups/' . $gid, NV_MY_DOMAIN);
                             $message = sprintf($lang_module['group_join_queue_message'], $groups_list['all'][$gid]['title'], $user_info['full_name'], $groups_list['all'][$gid]['title'], $url_group);
-                            @nv_sendmail($mail_from, $email, $lang_module['group_join_queue'], $message);
+                            @nv_sendmail_async($mail_from, $email, $lang_module['group_join_queue'], $message);
                         }
                     }
+                } elseif (in_array($gid, $groups_list['share'], true)) {
+                    add_push([
+                        'receiver_ids' => [$edit_userid],
+                        'sender_role' => 'group',
+                        'sender_group' => $gid,
+                        'message' => sprintf($lang_module['welcome_new_member'], $groups_list['all'][$gid]['title']),
+                        'exp_time' => NV_CURRENTTIME + 86400
+                    ]);
                 }
             }
         }
@@ -1078,7 +1122,10 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
         'question' => 1,
         'answer' => 1
     ]);
-    require NV_ROOTDIR . '/modules/users/fields.check.php';
+    $check = fieldsCheck($custom_fields, $array_data, $query_field, $valid_field, $userid);
+    if ($check['status'] == 'error') {
+        nv_jsonOutput($check);
+    }
 
     if ($array_data['editcensor'] and !defined('ACCESS_EDITUS') and !defined('NV_IS_MODADMIN')) {
         // Lưu thông tin và thông báo kiểm duyệt
@@ -1155,7 +1202,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
             $name = implode(' ', $name);
             $sitename = '<a href="' . NV_MY_DOMAIN . NV_BASE_SITEURL . '">' . $global_config['site_name'] . '</a>';
             $message = sprintf($lang_module['safe_send_content'], $name, $sitename, $row['safekey']);
-            @nv_sendmail([
+            @nv_sendmail_async([
                 $global_config['site_name'],
                 $global_config['site_email']
             ], $row['email'], $lang_module['safe_send_subject'], $message);
@@ -1210,7 +1257,7 @@ if ($checkss == $array_data['checkss'] and $array_data['type'] == 'basic') {
     ]);
 }
 
-$page_title = $mod_title = $lang_module['editinfo_pagetitle'];
+$page_title = $lang_module['editinfo_pagetitle'];
 $key_words = $module_info['keywords'];
 $page_url .= '/' . $array_data['type'];
 $canonicalUrl = getCanonicalUrl($page_url, true);
@@ -1257,6 +1304,7 @@ $array_data['gender'] = $row['gender'];
 $array_data['birthday'] = !empty($row['birthday']) ? date('d/m/Y', $row['birthday']) : '';
 $array_data['view_mail'] = $row['view_mail'] ? ' checked="checked"' : '';
 $array_data['photo'] = (!empty($row['photo']) and file_exists(NV_ROOTDIR . '/' . $row['photo'])) ? NV_BASE_SITEURL . $row['photo'] : '';
+$array_data['langinterface'] = $row['language'];
 
 if (empty($array_data['photo'])) {
     $array_data['photo'] = NV_STATIC_URL . 'themes/' . $module_info['template'] . '/images/' . $module_file . '/no_avatar.png';

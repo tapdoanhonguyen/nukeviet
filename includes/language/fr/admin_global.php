@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -44,9 +44,8 @@ $lang_global['admin_password'] = 'Votre mot de passe';
 $lang_global['admin_no_allow_func'] = 'Vous n\'êtes pas authorisé d\'accéder à cette fonction';
 $lang_global['admin_suspend'] = 'Est suspendu';
 $lang_global['block_modules'] = 'Blocks de modules';
-$lang_global['hello_admin1'] = 'Bonjour %1$s ! Votre dernière session était à %2$s';
-$lang_global['hello_admin2'] = 'Compte: %1$s ! Votre session est ouverte depuis %2$s';
-$lang_global['hello_admin3'] = 'Bonjour %1$s. C\'est votre première session d\'administration';
+$lang_global['hello_admin1'] = 'Vous vous êtes connecté pour la dernière fois à votre compte administrateur à %1$s via l\'adresse IP %2$s';
+$lang_global['hello_admin2'] = 'Vous vous êtes connecté à votre compte administrateur à %1$s via l\'adresse IP %2$s';
 $lang_global['ftp_error_account'] = 'Erreur: Impossible de se connecter au serveur FTP, merci de vérifier la configuration de FTP';
 $lang_global['ftp_error_path'] = 'Erreur: Chemin d\'accès incorrect';
 $lang_global['login_error_account'] = 'Erreur: Compte d\'Administrateur manquant ou invalide (pas moins de %1$s caractères, ni plus de  %2$s caractères. Utilisez uniquement les lettres latines, chiffres et tiret)';
@@ -56,20 +55,9 @@ $lang_global['error_zlib_support'] = 'Erreur: votre serveur ne supporte pas l\'e
 $lang_global['error_zip_extension'] = 'Erreur: votre serveur ne supporte pas l\'extension ZIP, veuillez demander votre hébergeur de l\'activer pour utiliser cette fonction.';
 $lang_global['length_characters'] = 'Nombre de caractères';
 $lang_global['length_suggest_max'] = 'Nombre de caractères à saisir';
-$lang_global['error_code_1'] = 'Adresse donnée n\'est pas bonne, veuillez la vérifier.';
-$lang_global['error_code_2'] = 'Protocole HTTP est interdit dans ce cas';
-$lang_global['error_code_3'] = 'Dossier contient des fichier(s) qui va être sauvegardé ne peut pas être écrit';
-$lang_global['error_code_4'] = 'Aucun outil ne soutien le protocole HTTP';
-$lang_global['error_code_5'] = 'Trop de ré-orientations qui se passent.';
-$lang_global['error_code_6'] = 'Certificat SSL ne peut pas être vérifié.';
-$lang_global['error_code_7'] = 'Demande HTTP échoué';
-$lang_global['error_code_8'] = 'N\'arrive pas à écrire dans les fichiers temporaires';
-$lang_global['error_code_9'] = 'Fonction fopen() est échoué en applicant sur ces fichiers';
-$lang_global['error_code_10'] = 'Demande HTTP par Curl échoué';
-$lang_global['error_code_11'] = 'Un erreur non-déterminé a eu lieu';
-$lang_global['error_valid_response'] = 'Les données retournées n\'est pas en bonne forme';
 $lang_global['phone_note_title'] = 'Règle de déclarer le numéro de téléphone';
 $lang_global['phone_note_content'] = 'Le numéro de téléphone est divisé en 2 parties. La première partie est obligée et est utilisée pour l\'affichage sur le site, la deuxième est facultative et est utilisée pour faire les appels un fois qu\'on clique au dessus.La première partie est écrite librement sans utiliser le crochet. La deuxième partie est mise entre les crochets juste après la première partie et ne contient que les caractères suivants: chiffre, étoile, dièse, virgule, point, point-virgule et plus ([0-9\*\#\.\,\;\+]).Par exemple, si vous utiliser <strong>0438211725 (ext 601)</strong>, alors le numéro <strong>0438211725 (ext 601)</strong> sera affiché simplement sur le site. Si vous déclarez <strong>0438211725 (ext 601)[+84438211725,601]</strong>, alors le système va afficher <strong>0438211725 (ext 601)</strong> sur le site et l\'url quand vous cliquer sur ce dernier sera <strong>tel:+84438211725,601</strong>Vous pouvez déclarer plusieurs numéros selon la règle au dessus. Il sont séparé par |.';
+$lang_global['phone_note_content2'] = 'Le numéro de téléphone est divisé en 2 parties. La première partie est obligée et est utilisée pour l\'affichage sur le site, la deuxième est facultative et est utilisée pour faire les appels un fois qu\'on clique au dessus.La première partie est écrite librement sans utiliser le crochet. La deuxième partie est mise entre les crochets juste après la première partie et ne contient que les caractères suivants: chiffre, étoile, dièse, virgule, point, point-virgule et plus ([0-9\*\#\.\,\;\+]).Par exemple, si vous utiliser <strong>0438211725 (ext 601)</strong>, alors le numéro <strong>0438211725 (ext 601)</strong> sera affiché simplement sur le site. Si vous déclarez <strong>0438211725 (ext 601)[+84438211725,601]</strong>, alors le système va afficher <strong>0438211725 (ext 601)</strong> sur le site et l\'url quand vous cliquer sur ce dernier sera <strong>tel:+84438211725,601</strong>.';
 $lang_global['multi_note'] = 'Pouvez déclarer plus qu\'une valeur. Les valeurs sont séparées par les point-virgule';
 $lang_global['multi_email_note'] = 'Pouvez déclarer plus qu\'une valeur. Les valeurs sont séparées par les point-virgule. La première adresse email est considéré comme la principale et qui sera utilisée pour envoyer et recevoir des messages';
 $lang_global['view_all'] = 'voir tous les';
@@ -91,3 +79,7 @@ $lang_global['admin_oauth_error_email'] = 'Erreur: L\'email de retour n\'est pas
 $lang_global['admin_oauth_error_savenew'] = 'Erreur: Impossible d\'enregistrer les données de vérification';
 $lang_global['admin_oauth_error'] = 'Erreur: La vérification n\'est pas valide, ce compte n\'a pas été autorisé à vérifier';
 $lang_global['acp'] = 'Administration du site';
+$lang_global['login_session_expire'] = 'Votre session de connexion expirera dans';
+$lang_global['account_settings'] = 'Paramètres du compte';
+$lang_global['your_admin_account'] = 'Votre compte administrateur';
+$lang_global['login_name'] = 'Identifiant';

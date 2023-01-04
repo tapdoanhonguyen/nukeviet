@@ -1,6 +1,6 @@
 ﻿/**
- * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/license
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license/
  */
 
 /**
@@ -13,10 +13,10 @@
  * (1) https://ckeditor.com/cke4/builder
  *     Visit online builder to build CKEditor from scratch.
  *
- * (2) https://ckeditor.com/cke4/builder/38563bbaefeeef575cd8d39520c253f7
+ * (2) https://ckeditor.com/cke4/builder/e92d9a94b1ba78f83b960624027bc850
  *     Visit online builder to build CKEditor, starting with the same setup as before.
  *
- * (3) https://ckeditor.com/cke4/builder/download/38563bbaefeeef575cd8d39520c253f7
+ * (3) https://ckeditor.com/cke4/builder/download/e92d9a94b1ba78f83b960624027bc850
  *     Straight download link to the latest version of CKEditor (Optimized) with the same setup as before.
  *
  * NOTE:
@@ -55,7 +55,7 @@ var CKBUILDER_CONFIG = {
 		'tests'
 	],
 	plugins : {
-		'autosave' : 1,
+		'allowsave' : 1,
 		'balloonpanel' : 1,
 		'basicstyles' : 1,
 		'bidi' : 1,
@@ -71,12 +71,13 @@ var CKBUILDER_CONFIG = {
 		'elementspath' : 1,
 		'enterkey' : 1,
 		'entities' : 1,
+		'eqneditor' : 1,
 		'filebrowser' : 1,
 		'find' : 1,
-		'flash' : 1,
 		'floatingspace' : 1,
 		'font' : 1,
 		'format' : 1,
+		'googledocs' : 1,
 		'horizontalrule' : 1,
 		'htmlwriter' : 1,
 		'iframe' : 1,
@@ -112,6 +113,7 @@ var CKBUILDER_CONFIG = {
 		'undo' : 1,
 		'uploadfile' : 1,
 		'uploadimage' : 1,
+		'video' : 1,
 		'wysiwygarea' : 1,
 		'youtube' : 1
 	},

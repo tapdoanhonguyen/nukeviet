@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -109,7 +109,7 @@ $lang_module['account_deny_name'] = 'Sorry, Account %s banned.';
 $lang_module['email_deny_name'] = 'Sorry, email %s banned';
 $lang_module['email_registered_name'] = 'Email %s was registered. Using lost password function to reset password';
 $lang_module['account_register'] = 'Your account was created';
-$lang_module['account_register_info'] = 'Hi %1$s,<br /><br />Your account at website %2$s activated. Your login information:<br /><br />URL: <a href="%3$s">%3$s</a><br /><br />Account: %4$s<br /><br /><br />This is email automatic sending from website %2$s.<br /><br />Site administrator';
+$lang_module['account_register_info'] = 'Hi %1$s,<br /><br />Your account at website %2$s activated. Your login information:<br /><br />URL: <a href="%3$s">%3$s</a><br /><br />Username: %4$s<br />Email: %5$s<br /><br /><br />This is email automatic sending from website %2$s.<br /><br />Site administrator';
 $lang_module['account_register_openid_info'] = 'Hi %1$s,<br /><br />Your account at website %2$s activated.<br/>To log into your account please visit the page: <a href="%3$s">%3$s</a> and press the button: Sign in with %4$s.<br /><br /><br/><br/>This is email automatic sending from website %2$s.<br /><br />Site administrator';
 $lang_module['account_register_to_admin'] = 'Your account was created. We\'ll check your register information and notify you soon.';
 $lang_module['account_active'] = 'Activate information';
@@ -362,7 +362,7 @@ $lang_module['active_users'] = 'Active users';
 $lang_module['actived_users'] = 'The user has been successfully activated!';
 $lang_module['not_active'] = 'Can\'t active user, please check again!';
 $lang_module['adduser_register'] = 'User has been created';
-$lang_module['adduser_register_info'] = 'Hi %1$s,<br /><br />Your account at website %2$s activated. Your login information:<br /><br />URL: <a href="%3$s">%3$s</a><br />Account: %4$s<br />This is email automatic sending from website %2$s.<br />Site administrator';
+$lang_module['adduser_register_info'] = 'Hi %1$s,<br /><br />Your account at website %2$s activated. Your login information:<br /><br />URL: <a href="%3$s">%3$s</a><br />Username: %4$s<br />Email: %5$s<br />This is email automatic sending from website %2$s.<br />Site administrator';
 $lang_module['noresult'] = 'No results matching your request';
 $lang_module['STT'] = 'Order';
 $lang_module['min_search'] = 'Please enter at least %s characters';
@@ -400,3 +400,9 @@ $lang_module['security_alert_openid_delete'] = 'OpenID <strong>%s</strong> has j
 $lang_module['security_alert_openid_delete1'] = 'OpenID <strong>%s</strong> has just been removed from your <strong>%s</strong> account. We\'re sending you this email to make sure it\'s you.<br /><br /><a href="%s" style="font-family:Roboto,RobotoDraft,Helvetica,Arial,sans-serif;line-height:16px;color:#ffffff;font-weight:400;text-decoration:none;font-size:14px;display:inline-block;padding:10px 24px;background-color:#4184f3;border-radius:5px;min-width:90px">OpenID Management</a>';
 $lang_module['forcedrelogin'] = 'Forced re-login everywhere';
 $lang_module['forcedrelogin_note'] = 'You are signed out of your account. Please login again';
+$lang_module['welcome_new_account'] = 'Welcome to %s! You have successfully registered. Let\'s start with setting up your account... We hope you\'ll have a pleasant and rewarding time on our website.';
+$lang_module['welcome_new_member'] = 'Welcome to the %1$s group! You have now become its official member. We wish you many enjoyable experiences with %1$s group.';
+$lang_module['info_when_leaving_group'] = 'Unfortunately, you left the %s group. We hope that we will have the opportunity to serve you again.';
+$lang_module['login_name'] = 'Login name';
+$lang_module['username_or_email'] = 'Username or Email';
+$lang_module['bydatalang'] = 'By data language';

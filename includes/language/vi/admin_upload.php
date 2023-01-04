@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -46,7 +46,6 @@ $lang_module['upload_createimage'] = 'Công cụ ảnh';
 $lang_module['upload_add_files'] = 'Thêm file';
 $lang_module['type_file'] = 'Tất cả';
 $lang_module['type_image'] = 'Hình ảnh';
-$lang_module['type_flash'] = 'Flash';
 $lang_module['rename'] = 'Đổi tên file';
 $lang_module['renamefolder'] = 'Đổi tên Thư mục';
 $lang_module['deletefolder'] = 'Xóa Thư mục';
@@ -148,6 +147,10 @@ $lang_module['strong_mode'] = 'Mạnh';
 $lang_module['mild_mode'] = 'Vừa phải';
 $lang_module['lite_mode'] = 'Yếu';
 $lang_module['none_mode'] = 'Không';
+$lang_module['strong_mode_note'] = 'File tải lên được coi là hợp lệ nếu MIME-type của nó được xác định là hợp lệ dựa trên nội dung thực và khớp với phần mở rộng của file.';
+$lang_module['mild_mode_note'] = 'File tải lên được coi là hợp lệ nếu MIME-type của nó được xác định là hợp lệ dựa trên nội dung thực hoặc do trình duyệt cung cấp và khớp với phần mở rộng của file.';
+$lang_module['lite_mode_note'] = 'File tải lên được coi là hợp lệ nếu MIME-type của nó được xác định là hợp lệ dựa trên nội dung thực hoặc do trình duyệt cung cấp và không nhất thiết phải khớp với phần mở rộng của file.';
+$lang_module['none_mode_note'] = 'File tải lên được coi là hợp lệ nếu MIME-type của nó được xác định là hợp lệ dựa trên: nội dung thực, do trình duyệt cung cấp hoặc được lấy từ tệp ini phù hợp với phần mở rộng của file.';
 $lang_module['upload_checking_note'] = 'Máy chủ của bạn không hỗ trợ một số hàm xác định loại file. Nếu chọn "Mạnh", bạn sẽ không thể upload file lên host';
 
 $lang_module['thumbconfig'] = 'Cấu hình ảnh thumbnail';
@@ -197,3 +200,16 @@ $lang_module['upload_overflow'] = 'Upload vượt giới hạn';
 $lang_module['upload_overflow_help'] = 'Cho phép tải lên các tập tin có kích thước lớn hơn dung lượng tối đa được tải lên. Lưu ý: Chỉ có tác dụng khi tải lên trực tiếp tập tin từ máy tính tại phần quản lý file, phần Chunk Upload bên trên được thiết lập. Giá trị cấu hình tại đây không được nhỏ hơn dung lượng tối đa của file tải lên được thiết lập bên trên';
 $lang_module['nv_mobile_mode_img'] = 'Tạo hình ảnh cho chế độ di động';
 $lang_module['nv_mobile_mode_img_note'] = 'Chiều rộng hình ảnh (0 = không tạo)';
+$lang_module['webpconvert'] = 'Tạo file WEBP';
+$lang_module['compressimage'] = 'Nén ảnh';
+$lang_module['qualitychange'] = 'Chất lượng ảnh';
+$lang_module['quality'] = 'Chất lượng';
+$lang_module['filesize'] = 'Dung lượng';
+$lang_module['original_filesize'] = 'Dung lượng file gốc';
+$lang_module['imgconfig'] = 'Cấu hình xử lý ảnh';
+$lang_module['otherconfig'] = 'Cấu hình khác';
+$lang_module['tinify_compress'] = 'Áp dụng nén ảnh bằng công cụ Tinify';
+$lang_module['tinify_compress_note'] = 'Công cụ nén ảnh Tinify được cung cấp miễn phí thông qua API của website <a href="https://tinypng.com/developers/reference/php">https://tinypng.com</a> (Giới hạn 500 lượt gọi API trong một tháng).';
+$lang_module['tinify_compress_note2'] = 'Để sử dụng công cụ này, bạn cần thêm thư viện Tinify vào kho composer (Xem hướng dẫn <a href="https://github.com/tinify/tinify-php#installation">tại đây</a>)';
+$lang_module['tinify_api_key'] = 'Tinify API Key';
+$lang_module['tinify_api_key_note'] = 'Để lấy khóa API của Tinify, bạn cần đăng ký <a href="https://tinypng.com/developers">tại đây</a>';

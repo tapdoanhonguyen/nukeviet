@@ -614,10 +614,24 @@ function detail_theme($news_contents, $array_keyword, $related_new_array, $relat
     }
 
     $news_contents['addtime'] = nv_date('d/m/Y h:i:s', $news_contents['addtime']);
+    $news_contents['css_autoplay'] = $news_contents['autoplay'] ? ' checked' : '';
+
+    !empty($news_contents['hometext']) && $news_contents['hometext'] = '<div data-toggle="error-report">' . $news_contents['hometext'] . '</div>';
+    !empty($news_contents['bodyhtml']) && $news_contents['bodyhtml'] = '<div data-toggle="error-report">' . $news_contents['bodyhtml'] . '</div>';
 
     $xtpl->assign('NEWSID', $news_contents['id']);
     $xtpl->assign('NEWSCHECKSS', $news_contents['newscheckss']);
     $xtpl->assign('DETAIL', $news_contents);
+
+    // Xuất giọng đọc
+    if (!empty($news_contents['current_voice'])) {
+        foreach ($news_contents['voicedata'] as $voice) {
+            $xtpl->assign('VOICE', $voice);
+            $xtpl->parse('main.show_player.loop');
+        }
+
+        $xtpl->parse('main.show_player');
+    }
 
     if ($news_contents['allowed_send'] == 1) {
         $xtpl->assign('CHECKSESSION', md5($news_contents['id'] . NV_CHECK_SESSION));
@@ -789,6 +803,49 @@ function detail_theme($news_contents, $array_keyword, $related_new_array, $relat
 
     if ($news_contents['status'] != 1) {
         $xtpl->parse('main.no_public');
+    }
+
+    $xtpl->parse('main');
+    $contents = $xtpl->text('main');
+    if (!empty($module_config[$module_name]['report_active']) and (!empty($module_config[$module_name]['report_group']) and nv_user_in_groups($module_config[$module_name]['report_group']))) {
+        $contents .= theme_report($news_contents['id'], $news_contents['newscheckss']);
+    }
+
+    return $contents;
+}
+
+/**
+ * theme_report()
+ * 
+ * @param mixed $newsid 
+ * @param mixed $newscheckss 
+ * @return string 
+ */
+function theme_report($newsid, $newscheckss)
+{
+    global $lang_global, $lang_module, $module_name, $module_captcha, $global_config;
+
+    $xtpl = new XTemplate('report.tpl', NV_ROOTDIR . '/themes/default/modules/news');
+    $xtpl->assign('LANG', $lang_module);
+    $xtpl->assign('GLANG', $lang_global);
+    $xtpl->assign('REPORT_URL', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA . '&' . NV_NAME_VARIABLE . '=' . $module_name);
+    $xtpl->assign('NEWSID', $newsid);
+    $xtpl->assign('NEWSCHECKSS', $newscheckss);
+
+    if (defined('NV_IS_USER')) {
+        $xtpl->parse('main.report_email_none');
+    }
+    // Nếu dùng reCaptcha v3
+    if ($module_captcha == 'recaptcha' and $global_config['recaptcha_ver'] == 3) {
+        $xtpl->parse('main.recaptcha3');
+    }
+    // Nếu dùng reCaptcha v2
+    elseif ($module_captcha == 'recaptcha' and $global_config['recaptcha_ver'] == 2) {
+        $xtpl->parse('main.recaptcha');
+    }
+    // Nếu dùng captcha hình
+    elseif ($module_captcha == 'captcha') {
+        $xtpl->parse('main.captcha');
     }
 
     $xtpl->parse('main');
@@ -1364,12 +1421,12 @@ function content_add($rowcontent, $htmlbodyhtml, $catidList, $topicList, $post_s
 
 /**
  * content_list()
- * 
- * @param mixed $articles 
- * @param mixed $my_author_detail 
- * @param mixed $base_url 
- * @param mixed $generate_page 
- * @return string 
+ *
+ * @param mixed $articles
+ * @param mixed $my_author_detail
+ * @param mixed $base_url
+ * @param mixed $generate_page
+ * @return string
  */
 function content_list($articles, $my_author_detail, $base_url, $generate_page)
 {

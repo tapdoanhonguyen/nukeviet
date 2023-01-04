@@ -1,7 +1,7 @@
 <!-- BEGIN: main -->
-<link type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
+<link type="text/css" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
 <script type="text/javascript">
     function nv_search_other() {
         $("#search_other").show();
@@ -16,8 +16,14 @@
             <table class="table table-striped table-bordered table-hover">
                 <tfoot>
                     <tr>
-                        <td colspan="4" class="text-center"><input type="reset" class="btn btn-info" value="{LANG.reset}" /> <input class="btn btn-primary" type="submit" name="submit" value="{LANG.search}" />
-                        <div class="pull-right" id="onclick_other"> <a title="" onclick="nv_search_other()" href="javascript:void(0);" class="btn btn-primary btn-xs">{LANG.field_options_text}</a></div></td>
+                        <td colspan="4" class="text-center">
+                            <input type="reset" class="btn btn-info" value="{LANG.reset}" />
+                            <input type="hidden" name="save" value="1">
+                            <input class="btn btn-primary" type="submit" value="{LANG.search}" />
+                            <div class="pull-right" id="onclick_other">
+                                <a title="" onclick="nv_search_other()" href="javascript:void(0);" class="btn btn-primary btn-xs">{LANG.field_options_text}</a>
+                            </div>
+                        </td>
                     </tr>
                 </tfoot>
                 <tbody>
@@ -36,7 +42,7 @@
                                 <!-- BEGIN: gender -->
                                 <option value="{GENDER.key}">{GENDER.title}</option>
                                 <!-- END: gender -->
-                        </select></td>
+                            </select></td>
                     </tr>
                 </tbody>
                 <tbody id="search_other" style="display:none;">

@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -46,7 +46,6 @@ $lang_module['upload_createimage'] = 'Créer une image';
 $lang_module['upload_add_files'] = 'Ajouter un fichier';
 $lang_module['type_file'] = 'Tous les fichiers';
 $lang_module['type_image'] = 'Fichier Image';
-$lang_module['type_flash'] = 'Flash';
 $lang_module['rename'] = 'Renommer le fichier';
 $lang_module['renamefolder'] = 'Renommer le répertoire';
 $lang_module['deletefolder'] = 'Supprimer le répertoire';
@@ -146,6 +145,10 @@ $lang_module['strong_mode'] = 'Strict';
 $lang_module['mild_mode'] = 'Moyen';
 $lang_module['lite_mode'] = 'Faible';
 $lang_module['none_mode'] = 'Non';
+$lang_module['strong_mode_note'] = 'Un fichier est considéré comme valide si son type MIME est déterminé comme étant valide en fonction du contenu réel du fichier et correspond à l\'extension du fichier.';
+$lang_module['mild_mode_note'] = 'Un fichier est considéré comme valide si son type MIME est déterminé comme étant valide sur la base du contenu réel du fichier ou fourni par le navigateur et correspond à l\'extension du fichier.';
+$lang_module['lite_mode_note'] = 'Un fichier est considéré comme valide si son type MIME est déterminé comme étant valide sur la base du contenu réel du fichier ou fourni par le navigateur, et ne correspond pas nécessairement à l\'extension du fichier.';
+$lang_module['none_mode_note'] = 'Un fichier est considéré comme valide si son type MIME est déterminé comme étant valide sur la base du contenu réel du fichier, soit fourni par le navigateur, soit obtenu à partir d\'un fichier ini, selon l\'extension de fichier.';
 $lang_module['upload_checking_note'] = 'Votre serveur ne supporte pas certaines fonctions déterminant le type de fichier. Si vous choisissez «renforcé», vous ne serez pas en mesure de télécharger des fichiers sur votre hôte';
 $lang_module['thumbconfig'] = 'Image sous forme thumbnail';
 $lang_module['thumb_width_height'] = 'Mesure du thumbnail de l\'image';
@@ -191,3 +194,16 @@ $lang_module['upload_overflow'] = 'Taille du fichier de débordement';
 $lang_module['upload_overflow_help'] = 'Permet de télécharger des fichiers plus grands que la taille de fichier maximale. Remarque: ne fonctionne que lors du téléchargement de fichiers directement à partir de votre ordinateur dans le gestionnaire de fichiers, la section Téléchargement de blocs ci-dessus est définie. La valeur configurée ici ne doit pas être inférieure à la taille maximale de l\'ensemble de fichiers téléchargé ci-dessus';
 $lang_module['nv_mobile_mode_img'] = 'Créer une image pour le mode mobile';
 $lang_module['nv_mobile_mode_img_note'] = 'Largeur de l\'image (0 = aucune création)';
+$lang_module['webpconvert'] = 'Fichier avec l\'extension WEBP';
+$lang_module['compressimage'] = 'Compresser l\'image';
+$lang_module['qualitychange'] = 'Qualité d\'image';
+$lang_module['quality'] = 'Qualité';
+$lang_module['filesize'] = 'Taille du fichier';
+$lang_module['original_filesize'] = 'Taille du fichier d\'origine';
+$lang_module['imgconfig'] = 'Paramétrage du traitement d\'images';
+$lang_module['otherconfig'] = 'Autre configuration';
+$lang_module['tinify_compress'] = 'Appliquer la compression d\'image avec l\'outil Tinify';
+$lang_module['tinify_compress_note'] = 'L\'outil de compression d\'image Tinify est disponible gratuitement via l\'API du site Web <a href="https://tinypng.com/developers/reference/php">https://tinypng.com</a> (Limité à 500 appels API en un mois).';
+$lang_module['tinify_compress_note2'] = 'Pour utiliser cet outil, vous devez ajouter le package Tinify au référentiel composer (voir les instructions <a href="https://github.com/tinify/tinify-php#installation">ici</a>).';
+$lang_module['tinify_api_key'] = 'Clé API Tinify';
+$lang_module['tinify_api_key_note'] = 'Pour obtenir la clé API de Tinify, vous devez vous inscrire <a href="https://tinypng.com/developers">ici</a>';

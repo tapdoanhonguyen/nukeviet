@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -19,14 +19,13 @@ if (!defined('NV_MAINFILE')) {
  * pr()
  *
  * @param mixed $a
- * @return
  */
 function pr($a)
 {
-    echo "<pre>";
+    echo '<pre>';
     print_r($a);
-    echo "</pre>";
-    die();
+    echo '</pre>';
+    exit();
 }
 
 /**
@@ -52,28 +51,7 @@ function nv_object2array($a)
  */
 function nv_getenv($a)
 {
-    if (!is_array($a)) {
-        $a = [
-            $a
-        ];
-    }
-
-    foreach ($a as $b) {
-        if (isset($_SERVER[$b])) {
-            return $_SERVER[$b];
-        }
-        if (isset($_ENV[$b])) {
-            return $_ENV[$b];
-        }
-        if (@getenv($b)) {
-            return @getenv($b);
-        }
-        if (function_exists('apache_getenv') and apache_getenv($b, true)) {
-            return apache_getenv($b, true);
-        }
-    }
-
-    return '';
+    return NukeViet\Site::getEnv($a);
 }
 
 /**
@@ -596,7 +574,8 @@ function nv_capcha_txt($seccode, $type = 'captcha')
 
         return false;
     }
-    mt_srand((float) microtime() * 1000000);
+
+    mt_srand(microtime(true) * 1000000);
     $maxran = 1000000;
     $random = mt_rand(0, $maxran);
 
@@ -1134,11 +1113,41 @@ function nv_editor_br2nl($text)
 }
 
 /**
+ * @param string $str
+ * @param string $tag
+ * @return string
+ */
+function nv_nl2tag($str, $tag = 'p')
+{
+    if (empty($str)) {
+        return '';
+    }
+
+    $arr = explode("\n", $str);
+    $arr = array_map('trim', $arr);
+    $arr = array_filter($arr);
+
+    return '<' . $tag . '>' . implode('</' . $tag . '><' . $tag . '>', $arr) . '</' . $tag . '>';
+}
+
+/**
+ * @param string $str
+ * @param string $tag
+ * @return string
+ */
+function nv_tag2nl($str, $tag = 'p')
+{
+    $str = preg_replace('/<' . $tag . '[^>]*?>/', '', $str);
+
+    return str_replace('</' . $tag . '>', chr(13) . chr(10), $str);
+}
+
+/**
  * nv_get_keywords()
- * 
- * @param mixed $content 
- * @param int $keyword_limit 
- * @param bool $isArr 
+ *
+ * @param mixed $content
+ * @param int   $keyword_limit
+ * @param bool  $isArr
  * @return array|string
  */
 function nv_get_keywords($content, $keyword_limit = 20, $isArr = false)
@@ -1227,17 +1236,50 @@ function nv_get_keywords($content, $keyword_limit = 20, $isArr = false)
 }
 
 /**
+ * mailAddHtml()
+ * Thêm khung HTML vào nội dung mail
+ * Function được áp dụng khi không có nv_mailHTML
+ *
+ * @param string $subject
+ * @param string $body
+ * @return string
+ */
+function mailAddHtml($subject, $body)
+{
+    global $global_config, $lang_global;
+
+    $subject = nv_autoLinkDisable($subject);
+
+    $xtpl = new XTemplate('mail.tpl', NV_ROOTDIR . '/themes/default/system');
+    $xtpl->assign('SITE_URL', NV_MY_DOMAIN);
+    $xtpl->assign('GCONFIG', $global_config);
+    $xtpl->assign('LANG', $lang_global);
+    $xtpl->assign('MESSAGE_TITLE', $subject);
+    $xtpl->assign('MESSAGE_CONTENT', $body);
+
+    if (!empty($global_config['phonenumber'])) {
+        $xtpl->parse('main.phonenumber');
+    }
+
+    $xtpl->parse('main');
+
+    return $xtpl->text('main');
+}
+
+/**
  * nv_sendmail()
  *
- * @param array|string $from
- * @param array|string $to
- * @param string       $subject
- * @param string       $message
- * @param string       $files
- * @param bool         $AddEmbeddedImage
- * @param bool         $testmode
- * @param array|string $cc
- * @param array        $bcc
+ * @param mixed  $from
+ * @param mixed  $to
+ * @param string $subject
+ * @param string $message
+ * @param string $files
+ * @param bool   $AddEmbeddedImage
+ * @param bool   $testmode
+ * @param mixed  $cc
+ * @param array  $bcc
+ * @param bool   $mailhtml
+ * @param array  $custom_headers
  * @return bool
  *
  * $from:             Nếu là string thì nó được hiểu là reply_address
@@ -1263,19 +1305,34 @@ function nv_get_keywords($content, $keyword_limit = 20, $isArr = false)
  * $bcc:              contact@nukeviet.vn
  *                    Hoặc: contact@nukeviet.vn => NukeViet1, contact2@nukeviet.vn => NukeViet2
  *                    Hoặc: contact@nukeviet.vn,contact2@nukeviet.vn
+ *
+ * $mailhtml:         Xác định có thêm khung HTML vào nội dung thư hay không, mặc định true
+ *
+ * $custom_headers:   Tiêu đề tùy chỉnh thêm vào phần header của mail (Dạng: Khóa => Giá trị)
  */
-function nv_sendmail($from, $to, $subject, $message, $files = '', $AddEmbeddedImage = false, $testmode = false, $cc = [], $bcc = [])
+function nv_sendmail($from, $to, $subject, $message, $files = '', $AddEmbeddedImage = false, $testmode = false, $cc = [], $bcc = [], $mailhtml = true, $custom_headers = [])
 {
-    global $global_config, $sys_info;
+    global $global_config;
 
     $sm_parameters = [];
 
     if (empty($to)) {
         return $testmode ? 'No receiver' : false;
     }
-    $sm_parameters['to'] = is_array($to) ? array_values($to) : [
-        $to
-    ];
+    $sm_parameters['to'] = is_array($to) ? array_values($to) : [$to];
+
+    $sm_parameters['from_name'] = $sm_parameters['from_address'] = $sm_parameters['reply_name'] = $sm_parameters['reply_address'] = '';
+    // Xác định thông tin người gửi, người nhận từ giá trị truyền vào
+    if (empty($from)) {
+        $sm_parameters['reply_address'] = $global_config['site_email'];
+    } elseif (is_array($from)) {
+        $sm_parameters['from_address'] = !empty($from[3]) ? $from[3] : (!empty($from['from_address']) ? $from['from_address'] : $sm_parameters['from_address']);
+        $sm_parameters['from_name'] = !empty($from[2]) ? $from[2] : (!empty($from['from_name']) ? $from['from_name'] : $sm_parameters['from_name']);
+        $sm_parameters['reply_address'] = !empty($from[1]) ? $from[1] : (!empty($from['reply_address']) ? $from['reply_address'] : $sm_parameters['reply_address']);
+        $sm_parameters['reply_name'] = !empty($from[0]) ? $from[0] : (!empty($from['reply_name']) ? $from['reply_name'] : $sm_parameters['reply_name']);
+    } else {
+        $sm_parameters['reply_address'] = $from;
+    }
 
     $sm_parameters['cc'] = [];
     if (!empty($cc)) {
@@ -1303,30 +1360,121 @@ function nv_sendmail($from, $to, $subject, $message, $files = '', $AddEmbeddedIm
         }
     }
 
-    $sm_parameters['from_name'] = $global_config['site_name'];
-    $sm_parameters['from_address'] = '';
-    $sm_parameters['reply_name'] = $global_config['site_name'];
-    $sm_parameters['reply_address'] = '';
+    $sm_parameters['subject'] = $subject;
+    $sm_parameters['message'] = $message;
+    $sm_parameters['logo_add'] = $AddEmbeddedImage;
+    $sm_parameters['mailhtml'] = $mailhtml;
+    $sm_parameters['testmode'] = $testmode;
+    $sm_parameters['files'] = !empty($files) ? array_map('trim', explode(',', $files)) : [];
 
-    // Xác định thông tin người gửi, người nhận từ giá trị truyền vào
-    if (empty($from)) {
-        $sm_parameters['reply_address'] = $global_config['site_email'];
-    } elseif (is_array($from)) {
-        if (!empty($from[3])) {
-            $sm_parameters['from_address'] = $from[3];
-        }
-        if (!empty($from[2])) {
-            $sm_parameters['from_name'] = $from[2];
-        }
-        if (!empty($from[1])) {
-            $sm_parameters['reply_address'] = $from[1];
-        }
-        if (!empty($from[0])) {
-            $sm_parameters['reply_name'] = $from[0];
-        }
-    } else {
-        $sm_parameters['reply_address'] = $from;
+    // Nếu gửi mail bằng hình thức riêng
+    if (isset($global_config['other_sendmail_method']) and function_exists($global_config['other_sendmail_method'])) {
+        return _otherMethodSendmail($sm_parameters);
     }
+
+    try {
+        $mail = new NukeViet\Core\Sendmail($global_config, NV_LANG_INTERFACE);
+        // Có thêm khung HTML vào nội dung mail hay không
+        $mail->setMailHtml($mailhtml);
+
+        // Add logo
+        $AddEmbeddedImage && $mail->addLogo();
+
+        // Xác định TO
+        foreach ($sm_parameters['to'] as $_email) {
+            $mail->addTo($_email);
+        }
+
+        // Xác định CC
+        if (!empty($sm_parameters['cc'])) {
+            foreach ($sm_parameters['cc'] as $_k => $_cc) {
+                $_m = is_numeric($_k) ? $_cc : $_k;
+                $_n = is_numeric($_k) ? '' : $_cc;
+                $mail->addCC($_m, $_n);
+            }
+        }
+
+        // Xác định BCC
+        if (!empty($sm_parameters['bcc'])) {
+            foreach ($sm_parameters['bcc'] as $_k => $_bcc) {
+                $_m = is_numeric($_k) ? $_bcc : $_k;
+                $_n = is_numeric($_k) ? '' : $_bcc;
+                $mail->addBCC($_m, $_n);
+            }
+        }
+
+        // Xác định FROM
+        if (!empty($sm_parameters['from_address'])) {
+            $mail->setSender($sm_parameters['from_address'], $sm_parameters['from_name']);
+        }
+
+        // Xác định REPLYTO
+        if (!empty($sm_parameters['reply_address'])) {
+            if (!is_array($sm_parameters['reply_address'])) {
+                $mail->addReply($sm_parameters['reply_address'], (!is_array($sm_parameters['reply_name']) ? $sm_parameters['reply_name'] : $sm_parameters['reply_name'][0]));
+            } else {
+                !is_array($sm_parameters['reply_name']) && $sm_parameters['reply_name'] = [$sm_parameters['reply_name']];
+                foreach ($sm_parameters['reply_address'] as $_k => $_reply) {
+                    $mail->addReply($_reply, (isset($sm_parameters['reply_name'][$_k]) ? $sm_parameters['reply_name'][$_k] : ''));
+                }
+            }
+        }
+
+        // Set Subject
+        $mail->setSubject($sm_parameters['subject']);
+
+        // Set Content
+        $mail->setContent($sm_parameters['message']);
+
+        // Add files
+        if (!empty($sm_parameters['files'])) {
+            foreach ($sm_parameters['files'] as $file) {
+                $mail->addFile($file);
+            }
+        }
+
+        // Thêm tiêu đề tùy chỉnh
+        if (!empty($custom_headers)) {
+            foreach ($custom_headers as $key => $val) {
+                $mail->addCustomHeader($key, $val);
+            }
+        }
+
+        nv_apply_hook('', 'sendmail_others_actions', [$global_config, $mail]);
+
+        // Gửi mail
+        if (!$mail->Send()) {
+            if (!$testmode and !empty($global_config['notify_email_error'])) {
+                nv_insert_notification('settings', 'sendmail_failure', [
+                    $sm_parameters['subject'],
+                    implode(', ', $sm_parameters['to'])
+                ], 0, 0, 0, 1, 2);
+            }
+            trigger_error($mail->ErrorInfo, E_USER_WARNING);
+
+            return $testmode ? $mail->ErrorInfo : false;
+        }
+
+        return $testmode ? '' : true;
+    } catch (PHPMailer\PHPMailer\Exception $e) {
+        trigger_error($e->errorMessage(), E_USER_WARNING);
+
+        return $testmode ? $e->errorMessage() : false;
+    }
+}
+
+/**
+ * _otherMethodSendmail()
+ *
+ * @param array $sm_parameters
+ * @return mixed
+ */
+function _otherMethodSendmail($sm_parameters)
+{
+    global $global_config, $sys_info;
+
+    empty($sm_parameters['from_name']) && $sm_parameters['from_name'] = $global_config['site_name'];
+    empty($sm_parameters['reply_name']) && $sm_parameters['reply_name'] = $global_config['site_name'];
 
     // Cố định người gửi người nhận hoặc chỉ định khi không có giá trị truyền vào
     if (!empty($global_config['sender_name']) and (empty($sm_parameters['from_name']) or $global_config['force_sender'])) {
@@ -1356,11 +1504,12 @@ function nv_sendmail($from, $to, $subject, $message, $files = '', $AddEmbeddedIm
         }
     }
 
-    $sm_parameters['subject'] = $subject;
-    $sm_parameters['message'] = $message;
-    $sm_parameters['logo_add'] = $AddEmbeddedImage;
-    if (function_exists('nv_mailHTML')) {
-        $sm_parameters['message'] = nv_mailHTML($sm_parameters['subject'], $sm_parameters['message']);
+    if ($sm_parameters['mailhtml']) {
+        if (function_exists('nv_mailHTML')) {
+            $sm_parameters['message'] = nv_mailHTML($sm_parameters['subject'], $sm_parameters['message']);
+        } else {
+            $sm_parameters['message'] = mailAddHtml($sm_parameters['subject'], $sm_parameters['message']);
+        }
         $sm_parameters['logo_add'] = true;
     }
     $sm_parameters['message'] = nv_url_rewrite($sm_parameters['message']);
@@ -1368,197 +1517,48 @@ function nv_sendmail($from, $to, $subject, $message, $files = '', $AddEmbeddedIm
     $sm_parameters['message'] = $optimizer->process(false);
     $sm_parameters['message'] = nv_unhtmlspecialchars($sm_parameters['message']);
 
-    $sm_parameters['files'] = !empty($files) ? array_map('trim', explode(',', $files)) : [];
-    $sm_parameters['testmode'] = $testmode;
+    return call_user_func($global_config['other_sendmail_method'], $sm_parameters);
+}
 
-    if (isset($global_config['other_sendmail_method']) and function_exists($global_config['other_sendmail_method'])) {
-        return call_user_func($global_config['other_sendmail_method'], $sm_parameters);
-    }
+/**
+ * nv_sendmail_async()
+ * Khởi tạo một luồng truy vấn không đồng bộ/chạy nền để gửi mail
+ * Nếu gửi mail không cần trả về kết quả thì nên sử dụng function này
+ *
+ * @param array|string $from
+ * @param array|string $to
+ * @param string       $subject
+ * @param string       $message
+ * @param string       $files
+ * @param bool         $AddEmbeddedImage
+ * @param bool         $testmode
+ * @param array|string $cc
+ * @param array        $bcc
+ * @param bool         $mailhtml
+ * @param array        $custom_headers
+ */
+function nv_sendmail_async($from, $to, $subject, $message, $files = '', $AddEmbeddedImage = false, $testmode = false, $cc = [], $bcc = [], $mailhtml = true, $custom_headers = [])
+{
+    global $global_config;
 
-    try {
-        $mail = new PHPMailer\PHPMailer\PHPMailer();
-        $mail->SetLanguage(NV_LANG_INTERFACE);
-        $mail->CharSet = $global_config['site_charset'];
+    $json_contents = json_encode([
+        'from' => $from,
+        'to' => $to,
+        'subject' => $subject,
+        'message' => $message,
+        'files' => $files,
+        'AddEmbeddedImage' => $AddEmbeddedImage,
+        'testmode' => $testmode,
+        'cc' => $cc,
+        'bcc' => $bcc,
+        'mailhtml' => $mailhtml,
+        'custom_headers' => $custom_headers
+    ], JSON_UNESCAPED_UNICODE);
 
-        $mailer_mode = strtolower($global_config['mailer_mode']);
-        if ($mailer_mode == 'smtp') {
-            // SMTP
-            $mail->isSMTP();
-            $mail->SMTPAuth = true;
-            $mail->Port = $global_config['smtp_port'];
-            $mail->Host = $global_config['smtp_host'];
-            $mail->Username = $global_config['smtp_username'];
-            $mail->Password = $global_config['smtp_password'];
-
-            $SMTPSecure = (int) $global_config['smtp_ssl'];
-            switch ($SMTPSecure) {
-                case 1:
-                    $mail->SMTPSecure = 'ssl';
-                    break;
-                case 2:
-                    $mail->SMTPSecure = 'tls';
-                    break;
-                default:
-                    $mail->SMTPSecure = '';
-            }
-            $mail->SMTPOptions = [
-                'ssl' => [
-                    'verify_peer' => (bool) $global_config['verify_peer_ssl'],
-                    'verify_peer_name' => (bool) $global_config['verify_peer_name_ssl'],
-                    'allow_self_signed' => true
-                ]
-            ];
-
-            if (empty($sm_parameters['from_address'])) {
-                if (filter_var($global_config['smtp_username'], FILTER_VALIDATE_EMAIL)) {
-                    $sm_parameters['from_address'] = $global_config['smtp_username'];
-                } else {
-                    $sm_parameters['from_address'] = $global_config['site_email'];
-                }
-            }
-        } elseif ($mailer_mode == 'sendmail') {
-            // Linux Mail
-            $mail->IsSendmail();
-
-            if (empty($sm_parameters['from_address'])) {
-                if (isset($_SERVER['SERVER_ADMIN']) and !empty($_SERVER['SERVER_ADMIN']) and filter_var($_SERVER['SERVER_ADMIN'], FILTER_VALIDATE_EMAIL)) {
-                    $sm_parameters['from_address'] = $_SERVER['SERVER_ADMIN'];
-                } elseif (checkdnsrr($_SERVER['SERVER_NAME'], 'MX') || checkdnsrr($_SERVER['SERVER_NAME'], 'A')) {
-                    $sm_parameters['from_address'] = 'webmaster@' . $_SERVER['SERVER_NAME'];
-                } else {
-                    $sm_parameters['from_address'] = $global_config['site_email'];
-                }
-            }
-        } elseif ($mailer_mode == 'mail' and !in_array('mail', $sys_info['disable_functions'], true)) {
-            // PHPmail
-            $mail->IsMail();
-
-            if (empty($sm_parameters['from_address'])) {
-                if (($php_email = @ini_get('sendmail_from')) != '' and filter_var($php_email, FILTER_VALIDATE_EMAIL)) {
-                    $sm_parameters['from_address'] = $php_email;
-                } elseif (preg_match("/([a-zA-Z0-9])+([a-zA-Z0-9\._-])*@([a-zA-Z0-9_-])+([a-zA-Z0-9\._-]+)+/", ini_get('sendmail_path'), $matches) and filter_var($matches[0], FILTER_VALIDATE_EMAIL)) {
-                    $sm_parameters['from_address'] = $matches[0];
-                } elseif (checkdnsrr($_SERVER['SERVER_NAME'], 'MX') || checkdnsrr($_SERVER['SERVER_NAME'], 'A')) {
-                    $sm_parameters['from_address'] = 'webmaster@' . $_SERVER['SERVER_NAME'];
-                } else {
-                    $sm_parameters['from_address'] = $global_config['site_email'];
-                }
-            }
-        } else {
-            return $testmode ? 'No mail mode' : false;
-        }
-
-        $mail->setFrom($sm_parameters['from_address'], nv_unhtmlspecialchars($sm_parameters['from_name']));
-
-        if (!empty($sm_parameters['reply'])) {
-            foreach ($sm_parameters['reply'] as $_m => $_n) {
-                $mail->addReplyTo($_m, nv_unhtmlspecialchars($_n));
-            }
-        }
-
-        foreach ($sm_parameters['to'] as $_to) {
-            $mail->addAddress($_to);
-        }
-
-        if (!empty($sm_parameters['cc'])) {
-            foreach ($sm_parameters['cc'] as $_m => $_n) {
-                $mail->addCC($_m, nv_unhtmlspecialchars($_n));
-            }
-        }
-
-        if (!empty($sm_parameters['bcc'])) {
-            foreach ($sm_parameters['bcc'] as $_m => $_n) {
-                $mail->addBCC($_m, nv_unhtmlspecialchars($_n));
-            }
-        }
-
-        $mail->Subject = nv_unhtmlspecialchars($sm_parameters['subject']);
-        // https://www.php.net/manual/en/function.mail.php
-        // Lines should not be larger than 70 characters.
-        $mail->WordWrap = 70;
-        $mail->Body = $sm_parameters['message'];
-        $mail->AltBody = strip_tags($message);
-        $mail->IsHTML(true);
-        $mail->XMailer = 'NukeViet CMS with PHPMailer';
-
-        if ($sm_parameters['logo_add']) {
-            $mail->AddEmbeddedImage(NV_ROOTDIR . '/' . $global_config['site_logo'], 'sitelogo', basename(NV_ROOTDIR . '/' . $global_config['site_logo']));
-        }
-
-        if (!empty($sm_parameters['files'])) {
-            foreach ($sm_parameters['files'] as $file) {
-                $mail->addAttachment($file);
-            }
-        }
-
-        $smime_included = !empty($global_config['smime_included']) ? array_map('trim', explode(',', $global_config['smime_included'])) : [];
-        if (!empty($smime_included) and in_array($mailer_mode, $smime_included, true)) {
-            // This PHPMailer example shows S/MIME signing a message and then sending.
-            // https://github.com/PHPMailer/PHPMailer/blob/master/examples/smime_signed_mail.phps
-            $email_name = str_replace('@', '__', $sm_parameters['from_address']);
-            $cert_key = NV_ROOTDIR . '/' . NV_CERTS_DIR . '/' . $email_name . '.key';
-            $cert_crt = NV_ROOTDIR . '/' . NV_CERTS_DIR . '/' . $email_name . '.crt';
-            $certchain_pem = file_exists(NV_ROOTDIR . '/' . NV_CERTS_DIR . '/' . $email_name . '.pem') ? NV_ROOTDIR . '/' . NV_CERTS_DIR . '/' . $email_name . '.pem' : '';
-            if (file_exists($cert_key) and file_exists($cert_crt)) {
-                $mail->sign(
-                    $cert_crt, // The location of your certificate file
-                    $cert_key, // The location of your private key file
-                    // The password you protected your private key with (not the Import Password!
-                    // May be empty but the parameter must not be omitted!
-                    '',
-                    $certchain_pem // The location of your chain file
-                );
-            }
-        }
-
-        $dkim_included = !empty($global_config['dkim_included']) ? array_map('trim', explode(',', $global_config['dkim_included'])) : [];
-        if (!empty($dkim_included) and in_array($mailer_mode, $dkim_included, true)) {
-            // https://github.com/PHPMailer/PHPMailer/blob/master/examples/DKIM_sign.phps
-            $domain = substr(strstr($sm_parameters['from_address'], '@'), 1);
-            $privatekeyfile = NV_ROOTDIR . '/' . NV_CERTS_DIR . '/nv_dkim.' . $domain . '.private.pem';
-            $verifiedkey = NV_ROOTDIR . '/' . NV_CERTS_DIR . '/nv_dkim.' . $domain . '.verified';
-            if (file_exists($verifiedkey)) {
-                $verifiedTime = file_get_contents($verifiedkey);
-                $verifiedTime = (int) $verifiedTime + 604800;
-                if (NV_CURRENTTIME > $verifiedTime) {
-                    $verified = DKIM_verify($domain, 'nv');
-                    if (!$verified) {
-                        @unlink($verifiedkey);
-                    } else {
-                        $verifiedTime = NV_CURRENTTIME;
-                        file_put_contents($verifiedkey, $verifiedTime, LOCK_EX);
-                    }
-                }
-                if (NV_CURRENTTIME <= $verifiedTime and file_exists($privatekeyfile)) {
-                    $mail->DKIM_domain = $domain;
-                    $mail->DKIM_private = $privatekeyfile;
-                    $mail->DKIM_selector = 'nv';
-                    $mail->DKIM_passphrase = '';
-                    $mail->DKIM_identity = $sm_parameters['from_address'];
-                    $mail->DKIM_copyHeaderFields = false;
-                    $mail->DKIM_extraHeaders = ['List-Unsubscribe', 'List-Help'];
-                }
-            }
-        }
-
-        if (!$mail->Send()) {
-            if (!$testmode and !empty($global_config['notify_email_error'])) {
-                nv_insert_notification('settings', 'sendmail_failure', [
-                    $sm_parameters['subject'],
-                    implode(', ', $sm_parameters['to'])
-                ], 0, 0, 0, 1, 2);
-            }
-            trigger_error($mail->ErrorInfo, E_USER_WARNING);
-
-            return $testmode ? $mail->ErrorInfo : false;
-        }
-
-        return $testmode ? '' : true;
-    } catch (PHPMailer\PHPMailer\Exception $e) {
-        trigger_error($e->errorMessage(), E_USER_WARNING);
-
-        return $testmode ? $e->errorMessage() : false;
-    }
+    $file_name = nv_genpass(8);
+    $temp_file = NV_ROOTDIR . '/' . NV_TEMP_DIR . '/' . md5($global_config['sitekey'] . $file_name);
+    file_put_contents($temp_file, $json_contents, LOCK_EX);
+    post_async(NV_BASE_SITEURL . 'index.php', ['__sendmail' => $file_name]);
 }
 
 /**
@@ -1819,8 +1819,8 @@ function nv_alias_page($title, $base_url, $num_items, $per_page, $on_page, $add_
 
 /**
  * check_endurl_variables()
- * 
- * @param mixed $request_query 
+ *
+ * @param mixed $request_query
  */
 function check_endurl_variables(&$request_query)
 {
@@ -1932,6 +1932,7 @@ function getCanonicalUrl($page_url, $query_check = false, $abs_comp = false)
 
     if ($global_config['request_uri_check'] == 'not') {
         str_starts_with($page_url, NV_MY_DOMAIN) && $page_url = substr($page_url, strlen(NV_MY_DOMAIN));
+
         return urlRewriteWithDomain($page_url, NV_MAIN_DOMAIN);
     }
 
@@ -1971,33 +1972,13 @@ function getCanonicalUrl($page_url, $query_check = false, $abs_comp = false)
  */
 function nv_check_domain($domain)
 {
-    if (preg_match("/^([a-z0-9](-*[a-z0-9])*)(\.([a-z0-9](-*[a-z0-9])*))*$/i", $domain) and preg_match("/^.{1,253}$/", $domain) and preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $domain)) {
-        return $domain;
-    }
-
-    if ($domain == 'localhost' or filter_var($domain, FILTER_VALIDATE_IP)) {
-        return $domain;
-    }
-
+    $domain = NukeViet\Http\Http::filter_domain($domain);
     if (!empty($domain)) {
-        if (function_exists('idn_to_ascii')) {
-            $domain_ascii = idn_to_ascii($domain, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
-        } else {
-            $Punycode = new TrueBV\Punycode();
-            try {
-                $domain_ascii = $Punycode->encode($domain);
-            } catch (\Exception $e) {
-                $domain_ascii = '';
-            }
-        }
+        return $domain;
+    }
 
-        if (preg_match('/^xn\-\-([a-z0-9\-\.]+)\.([a-z0-9\-]+)$/', $domain_ascii)) {
-            return $domain_ascii;
-        }
-
-        if ($domain == NV_SERVER_NAME) {
-            return $domain;
-        }
+    if ($domain == NV_SERVER_NAME) {
+        return $domain;
     }
 
     return '';
@@ -2005,10 +1986,10 @@ function nv_check_domain($domain)
 
 /**
  * nv_is_url()
- * 
- * @param string $url 
- * @param bool $isInternal 
- * @return bool 
+ *
+ * @param string $url
+ * @param bool   $isInternal
+ * @return bool
  */
 function nv_is_url($url, $isInternal = false)
 {
@@ -2016,240 +1997,160 @@ function nv_is_url($url, $isInternal = false)
         $url = NV_MY_DOMAIN . $url;
     }
 
-    if (!preg_match('/^(http|https|ftp)\:\/\//', $url)) {
+    $url = nv_strtolower($url);
+
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
         return false;
     }
-
-    $url = nv_strtolower($url);
 
     $sanitizer = new NukeViet\Core\Sanitizer();
     if (!$sanitizer->xssValid($url)) {
         return false;
     }
 
-    if (!($parts = parse_url($url))) {
-        return false;
-    }
-
-    $domain = (isset($parts['host'])) ? nv_check_domain($parts['host']) : '';
-    if (empty($domain)) {
-        return false;
-    }
-
-    if (isset($parts['user']) and !preg_match('/^([0-9a-z\-]|[\_])*$/', $parts['user'])) {
-        return false;
-    }
-
-    if (isset($parts['pass']) and !preg_match('/^([0-9a-z\-]|[\_])*$/', $parts['pass'])) {
-        return false;
-    }
-
-    if (isset($parts['path']) and !preg_match('/^[0-9a-z\+\-\_\/\&\=\#\.\,\;\%\\s\!\:]*$/', $parts['path'])) {
-        return false;
-    }
-
-    if (isset($parts['query']) and !preg_match('/^[0-9a-z\+\-\_\/\?\&\=\#\.\,\;\%\\s\!]*$/', $parts['query'])) {
-        return false;
-    }
-
-    return true;
+    return NukeViet\Http\Http::parse_url($url, true);
 }
 
 /**
  * nv_check_url()
  *
  * @param string $url
- * @param bool   $isTriggerError
- * @param int    $is_200
+ * @param bool   $isArray
  * @return bool
  */
-function nv_check_url($url, $isTriggerError = true, $is_200 = 0)
+function nv_check_url($url, $isArray = false)
 {
+    global $global_config, $lang_global;
+
+    $res = [
+        'url' => $url,
+        'isvalid' => false,
+        'code' => 0,
+        'message' => ''
+    ];
+
     if (empty($url)) {
+        if ($isArray) {
+            $res['message'] = 'Empty URL';
+
+            return $res;
+        }
+
         return false;
     }
 
     $url = str_replace(' ', '%20', $url);
     $url = nv_strtolower($url);
 
-    if (!preg_match('/^(http|https|ftp|gopher)\:\/\//', $url)) {
-        return false;
-    }
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        if ($isArray) {
+            $res['message'] = 'Invalid URL';
 
-    if (!($url_info = parse_url($url))) {
-        return false;
-    }
-
-    $domain = (isset($url_info['host'])) ? nv_check_domain($url_info['host']) : '';
-    if (empty($domain)) {
-        return false;
-    }
-
-    if (isset($paurl_inforts['user']) and !preg_match('/^([0-9a-z\-]|[\_])*$/', $url_info['user'])) {
-        return false;
-    }
-
-    if (isset($url_info['pass']) and !preg_match('/^([0-9a-z\-]|[\_])*$/', $url_info['pass'])) {
-        return false;
-    }
-
-    if (isset($url_info['path']) and !preg_match('/^[0-9a-z\+\-\_\/\&\=\#\.\,\;\%\\s\!\:]*$/', $url_info['path'])) {
-        return false;
-    }
-
-    if (isset($url_info['query']) and !preg_match('/^[0-9a-z\+\-\_\/\?\&\=\#\.\,\;\%\\s\!]*$/', $url_info['query'])) {
-        return false;
-    }
-
-    $allow_url_fopen = ini_get('allow_url_fopen') == '1' or strtolower(ini_get('allow_url_fopen')) == 'on';
-    $isHttps = $url_info['scheme'] == 'https';
-
-    if (nv_function_exists('curl_init') and nv_function_exists('curl_exec')) {
-        $port = isset($url_info['port']) ? (int) $url_info['port'] : ($isHttps ? 443 : 80);
-
-        $userAgents = [
-            'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/3.0',
-            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)',
-            'Mozilla/4.8 [en] (Windows NT 6.0; U)',
-            'Opera/9.25 (Windows NT 6.0; U; en)'
-        ];
-
-        $open_basedir = (ini_get('open_basedir') == '1' or strtolower(ini_get('open_basedir')) == 'on') ? 1 : 0;
-
-        srand((float) microtime() * 10000000);
-        $rand = array_rand($userAgents);
-        $agent = $userAgents[$rand];
-        $curl = curl_init($url);
-
-        curl_setopt($curl, CURLOPT_HEADER, true);
-        curl_setopt($curl, CURLOPT_NOBODY, true);
-        curl_setopt($curl, CURLOPT_PORT, $port);
-
-        if ($isHttps) {
-            curl_setopt($curl, CURLOPT_SSL_VERIFYSTATUS, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        }
-
-        if ($open_basedir) {
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-        }
-
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 15);
-        curl_setopt($curl, CURLOPT_USERAGENT, $agent);
-
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        if ($response === false) {
-            if ($isTriggerError) {
-                trigger_error(curl_error($curl), E_USER_WARNING);
-            }
-
-            return false;
-        }
-        $res = explode(PHP_EOL, $response);
-    } elseif (nv_function_exists('get_headers') and $allow_url_fopen) {
-        if ($isHttps) {
-            $context = stream_context_create([
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false
-                ]
-            ]);
-        } else {
-            $context = stream_context_create([
-                'http' => [
-                    'method' => 'GET',
-                    'header' => "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate, br\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0\r\n"
-                ]
-            ]);
-        }
-
-        $res = get_headers($url, 0, $context);
-    } elseif (nv_function_exists('stream_socket_client') and nv_function_exists('fgets')) {
-        $res = [];
-        if ($isHttps) {
-            $scheme = 'ssl://';
-            $port = isset($url_info['port']) ? (int) $url_info['port'] : 443;
-            $context = stream_context_create([
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false
-                ]
-            ]);
-        } else {
-            $scheme = '';
-            $port = isset($url_info['port']) ? (int) $url_info['port'] : 80;
-            $context = stream_context_create([
-                'http' => [
-                    'method' => 'GET',
-                    'header' => "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate, br\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0\r\n"
-                ]
-            ]);
-        }
-
-        $fp = stream_socket_client($scheme . $url_info['host'] . ':' . $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
-
-        if (!$fp) {
-            if ($isTriggerError) {
-                trigger_error($errstr, E_USER_WARNING);
-            }
-
-            return false;
-        }
-
-        $path = !empty($url_info['path']) ? $url_info['path'] : '/';
-        $path .= !empty($url_info['query']) ? '?' . $url_info['query'] : '';
-
-        fwrite($fp, 'HEAD ' . $path . " HTTP/1.0\r\n");
-        fwrite($fp, 'Host: ' . $url_info['host'] . ':' . $port . "\r\n");
-        fwrite($fp, "Connection: close\r\n\r\n");
-
-        while (!feof($fp)) {
-            if ($header = trim(fgets($fp, 1024))) {
-                $res[] = $header;
-            }
-        }
-        @fclose($fp);
-    } else {
-        if ($isTriggerError) {
-            trigger_error('error server no support check url', E_USER_WARNING);
+            return $res;
         }
 
         return false;
     }
 
-    if (empty($res)) {
-        return false;
-    }
+    if (!NukeViet\Http\Http::parse_url($url, true)) {
+        if ($isArray) {
+            $res['message'] = 'Invalid URL';
 
-    if (preg_match('/(200)/', $res[0])) {
-        return true;
-    }
-    if ($is_200 > 5) {
-        return false;
-    }
-
-    if (preg_match('/(301)|(302)|(303)|(307)/', $res[0])) {
-        foreach ($res as $v) {
-            if (preg_match('/location:\s(.*?)$/is', $v, $matches)) {
-                ++$is_200;
-                $location = trim($matches[1]);
-
-                return nv_check_url($location, $isTriggerError, $is_200);
-            }
+            return $res;
         }
+
+        return false;
     }
 
-    return false;
+    $args = [
+        'headers' => [
+            'Referer' => $url
+        ],
+        'nobody' => true
+    ];
+
+    $NV_Http = new NukeViet\Http\Http($global_config);
+    $result = $NV_Http->get($url, $args);
+
+    $error = '';
+    if (!empty(NukeViet\Http\Http::$error)) {
+        $error = nv_http_get_lang(NukeViet\Http\Http::$error);
+    } elseif (is_object($result) and isset($result->error) and !empty($result->error)) {
+        $error = $result->error;
+    } elseif (empty($result['response'])) {
+        $error = $lang_global['error_valid_response'];
+    } elseif ($result['response']['code'] != 200) {
+        $error = !empty($result['response']['message']) ? $result['response']['message'] : $result['response']['code'];
+    }
+
+    if (!empty($error)) {
+        if ($isArray) {
+            $res['code'] = (!is_object($result) and isset($result['response']['code'])) ? $result['response']['code'] : 0;
+            $res['message'] = $error;
+
+            return $res;
+        }
+
+        return false;
+    }
+
+    if ($isArray) {
+        $res['isvalid'] = true;
+        $res['code'] = isset($result['response']['code']) ? $result['response']['code'] : 0;
+        $res['message'] = 'OK';
+
+        return $res;
+    }
+
+    return true;
+}
+
+/**
+ * url_get_contents()
+ *
+ * @param mixed $url
+ * @return mixed
+ * @throws ValueError
+ */
+function url_get_contents($url)
+{
+    global $global_config;
+
+    if (!nv_is_url($url)) {
+        return false;
+    }
+
+    $userAgents = [
+        'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/3.0',
+        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)',
+        'Mozilla/4.8 [en] (Windows NT 6.0; U)',
+        'Opera/9.25 (Windows NT 6.0; U; en)'
+    ];
+    mt_srand(microtime(true) * 1000000);
+    $rand = array_rand($userAgents);
+    $agent = $userAgents[$rand];
+
+    $args = [
+        'headers' => [
+            'Referer' => $url,
+            'User-Agent' => $agent
+        ]
+    ];
+
+    $Http = new NukeViet\Http\Http($global_config);
+    $result = $Http->get($url, $args);
+    if (NukeViet\Http\Http::$error) {
+        return false;
+    }
+
+    return $result['body'];
 }
 
 /**
  * is_localhost()
- * 
- * @return bool 
+ *
+ * @return bool
  */
 function is_localhost()
 {
@@ -2373,9 +2274,9 @@ function nv_url_rewrite_callback($matches)
 }
 
 /**
- * @param string $url 
- * @param string $domain 
- * @return string 
+ * @param string $url
+ * @param string $domain
+ * @return string
  */
 function urlRewriteWithDomain($url, $domain)
 {
@@ -2412,7 +2313,7 @@ function nv_change_buffer($buffer)
     $script = 'script' . (defined('NV_SCRIPT_NONCE') ? ' nonce="' . NV_SCRIPT_NONCE . '"' : '');
 
     if (defined('NV_SYSTEM') and (defined('GOOGLE_ANALYTICS_SYSTEM') or (isset($global_config['googleAnalyticsID']) and preg_match('/^UA-\d{4,}-\d+$/', $global_config['googleAnalyticsID'])))) {
-        $_google_analytics = "<" . $script . " data-show=\"inline\">(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){" . PHP_EOL;
+        $_google_analytics = '<' . $script . " data-show=\"inline\">(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){" . PHP_EOL;
         $_google_analytics .= '(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),' . PHP_EOL;
         $_google_analytics .= 'm=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)' . PHP_EOL;
         $_google_analytics .= "})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');" . PHP_EOL;
@@ -2429,7 +2330,7 @@ function nv_change_buffer($buffer)
 
     if (defined('NV_SYSTEM') and isset($global_config['googleAnalytics4ID']) and (preg_match('/^UA-\d{4,}-\d+$/', $global_config['googleAnalytics4ID']) or preg_match('/^G\-[a-zA-Z0-9]{8,}$/', $global_config['googleAnalytics4ID']))) {
         $_google_analytics4 = '<' . $script . ' async src="https://www.googletagmanager.com/gtag/js?id=' . $global_config['googleAnalytics4ID'] . '"></script>' . PHP_EOL;
-        $_google_analytics4 .= "<" . $script . ">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date);gtag('config','" . $global_config['googleAnalytics4ID'] . "');</script>" . PHP_EOL;
+        $_google_analytics4 .= '<' . $script . ">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date);gtag('config','" . $global_config['googleAnalytics4ID'] . "');</script>" . PHP_EOL;
         $buffer = preg_replace('/(<\/head[^>]*>)/', PHP_EOL . $_google_analytics4 . '$1', $buffer, 1);
     }
 
@@ -2442,40 +2343,56 @@ function nv_change_buffer($buffer)
 
 /**
  * parse_csp()
- * 
- * @param string $json_csp 
- * @return string 
+ *
+ * @param string $json_csp
+ * @return string
  */
 function parse_csp($json_csp)
 {
-    global $global_config, $nv_Cache;
+    global $nv_Cache, $global_config;
 
     $script_nonce = defined('NV_SCRIPT_NONCE') ? NV_SCRIPT_NONCE : '';
+    $md5 = 'static_domains-' . $global_config['cdn_url'] . $global_config['nv_static_url'] . $global_config['assets_cdn_url'];
+    $md5 = md5($md5);
 
     $cacheFile = 'csp_' . NV_CACHE_PREFIX . '.cache';
     if (($cache = $nv_Cache->getItem('settings', $cacheFile)) != false) {
         $_info = unserialize($cache);
-        if ($_info['static_url'] == $global_config['nv_static_url']) {
+        if (!empty($_info['md5']) and $_info['md5'] == $md5) {
             return preg_replace('/nonce\-([^\']+)/', 'nonce-' . $script_nonce, $_info['content']);
         }
     }
 
+    $static_domains = array_map(function ($url) {
+        if (empty($url)) {
+            return '';
+        }
+
+        $url = preg_replace('/^(https?\:)?\/\//', '', $url);
+        $url = str_replace('www.', '', $url);
+        $url = parse_url('http://' . $url);
+
+        return !empty($url['host']) ? $url['host'] : '';
+    }, [$global_config['cdn_url'], $global_config['nv_static_url'], $global_config['assets_cdn_url']]);
+    $static_domains = array_filter($static_domains);
+    !empty($static_domains) && $static_domains = array_unique($static_domains);
+
     $static_csp = [];
-    if (!empty($global_config['nv_static_url']) and !str_ends_with(NV_MY_DOMAIN, $global_config['nv_static_url'])) {
-        $nv_static_url = str_replace('www.', '', $global_config['nv_static_url']);
-        $static_host_keys = ['default-src', 'script-src', 'style-src', 'img-src', 'font-src', 'connect-src', 'media-src', 'frame-src', 'form-action', 'manifest-src'];
-        foreach ($static_host_keys as $key) {
-            $static_csp[$key] = [
-                'hosts' => [$nv_static_url]
-            ];
+    if (!empty($static_domains)) {
+        foreach ($static_domains as $url) {
+            $static_host_keys = ['default-src', 'script-src', 'style-src', 'img-src', 'font-src', 'connect-src', 'media-src', 'frame-src', 'form-action', 'manifest-src'];
+            foreach ($static_host_keys as $key) {
+                !isset($static_csp[$key]['hosts']) && $static_csp[$key]['hosts'] = [];
+                $static_csp[$key]['hosts'][] = $url;
+            }
         }
     }
 
     $csp_sources = [
         'none' => "'none'",
-        'all' => "*",
+        'all' => '*',
         'self' => "'self'",
-        'data' => "data:",
+        'data' => 'data:',
         'unsafe-inline' => "'unsafe-inline'",
         'unsafe-eval' => "'unsafe-eval'"
     ];
@@ -2516,7 +2433,7 @@ function parse_csp($json_csp)
     }
 
     $content = implode('; ', $csp);
-    $nv_Cache->setItem('settings', $cacheFile, serialize(['static_url' => $global_config['nv_static_url'], 'content' => $content]));
+    $nv_Cache->setItem('settings', $cacheFile, serialize(['md5' => $md5, 'content' => $content]));
 
     return $content;
 }
@@ -2554,15 +2471,91 @@ function nv_insert_logs($lang = '', $module_name = '', $name_key = '', $note_act
 }
 
 /**
- * nv_site_mods()
+ * nv_sys_mods()
  *
+ * @param string $lang
  * @return array
  */
-function nv_site_mods()
+function nv_sys_mods($lang = '')
 {
-    global $sys_mods, $admin_info, $global_config;
+    global $nv_Cache, $db, $db_config;
 
-    $site_mods = $sys_mods;
+    empty($lang) && $lang = NV_LANG_DATA;
+
+    $cache_file = $lang . '_smods_' . NV_CACHE_PREFIX . '.cache';
+    if (($cache = $nv_Cache->getItem('modules', $cache_file)) != false) {
+        return unserialize($cache);
+    }
+
+    $sys_mods = [];
+    try {
+        $result = $db->query('SELECT * FROM ' . $db_config['prefix'] . '_' . $lang . '_modules m LEFT JOIN ' . $db_config['prefix'] . '_' . $lang . '_modfuncs f ON m.title=f.in_module WHERE m.act = 1 ORDER BY m.weight, f.subweight');
+        while ($row = $result->fetch()) {
+            $m_title = $row['title'];
+            $f_name = $row['func_name'];
+            $f_alias = $row['alias'];
+            if (!isset($sys_mods[$m_title])) {
+                $sys_mods[$m_title] = [
+                    'module_file' => $row['module_file'],
+                    'module_data' => $row['module_data'],
+                    'module_upload' => $row['module_upload'],
+                    'module_theme' => $row['module_theme'],
+                    'custom_title' => $row['custom_title'],
+                    'site_title' => (empty($row['site_title'])) ? $row['custom_title'] : $row['site_title'],
+                    'admin_title' => (empty($row['admin_title'])) ? $row['custom_title'] : $row['admin_title'],
+                    'admin_file' => $row['admin_file'],
+                    'main_file' => $row['main_file'],
+                    'theme' => $row['theme'],
+                    'mobile' => $row['mobile'],
+                    'description' => $row['description'],
+                    'keywords' => $row['keywords'],
+                    'groups_view' => $row['groups_view'],
+                    'is_modadmin' => false,
+                    'admins' => $row['admins'],
+                    'rss' => $row['rss'],
+                    'sitemap' => $row['sitemap'],
+                    'is_search' => file_exists(NV_ROOTDIR . '/modules/' . $row['module_file'] . '/search.php') ? 1 : 0,
+                    'funcs' => []
+                ];
+            }
+            $sys_mods[$m_title]['funcs'][$f_alias] = [
+                'func_id' => $row['func_id'],
+                'func_name' => $f_name,
+                'show_func' => $row['show_func'],
+                'func_custom_name' => $row['func_custom_name'],
+                'func_site_title' => empty($row['func_site_title']) ? $row['func_custom_name'] : $row['func_site_title'],
+                'description' => $row['description'],
+                'in_submenu' => $row['in_submenu']
+            ];
+            $sys_mods[$m_title]['alias'][$f_name] = $f_alias;
+        }
+        $cache = serialize($sys_mods);
+        $nv_Cache->setItem('modules', $cache_file, $cache);
+        unset($cache, $result);
+    } catch (PDOException $e) {
+        // trigger_error( $e->getMessage() );
+    }
+
+    return $sys_mods;
+}
+
+/**
+ * nv_site_mods()
+ *
+ * @param string $lang
+ * @return array
+ */
+function nv_site_mods($lang = '')
+{
+    global $admin_info, $global_config;
+
+    if (empty($lang)) {
+        global $sys_mods;
+        $site_mods = $sys_mods;
+    } else {
+        $site_mods = nv_sys_mods($lang);
+    }
+
     if (defined('NV_SYSTEM')) {
         foreach ($site_mods as $m_title => $row) {
             /*
@@ -2749,6 +2742,68 @@ function nv_status_notification($language, $module, $type, $obid, $status = 1, $
 }
 
 /**
+ * add_push()
+ * $args có thể chứa các phần tử:
+ * receiver_grs (dạng mảng): Danh sách ID của các nhóm nhận thông báo
+ * receiver_ids (dạng mảng): Danh sách ID của người dùng nhận thông báo.
+ *                           Nếu có giá trị rỗng = tất cả người dùng
+ * sender_role (dạng chuỗi): Gửi từ (gồm: system, group, admin)
+ * sender_group (dạng số):   ID của nhóm gửi thông báo (sử dụng khi sender_role là group)
+ * sender_admin (dạng số):   ID của admin gửi thông báo (sử dụng khi sender_role là admin)
+ * message (dạng chuỗi):     Nội dung thông báo (bắt buộc)
+ * link (dạng chuỗi):        Liên kết của thông báo
+ * add_time (dạng số):       Thời gian đăng thông báo (0 = thời gian hiển thị đầu tiên)
+ * exp_time (dạng số):       Thời gian hết hạn thông báo (0 = vô thời hạn)
+ *
+ * @param array $args
+ * @return false|string
+ */
+function add_push($args)
+{
+    global $global_config, $db;
+
+    if (empty($global_config['push_active'])) {
+        return false;
+    }
+
+    $data = [
+        'receiver_grs' => [],
+        'receiver_ids' => [],
+        'sender_role' => 'system',
+        'sender_group' => 0,
+        'sender_admin' => 0,
+        'message' => '',
+        'link' => '',
+        'add_time' => NV_CURRENTTIME,
+        'exp_time' => !empty($global_config['push_default_exp']) ? (NV_CURRENTTIME + (int) $global_config['push_default_exp']) : 0
+    ];
+    $data = array_merge($data, $args);
+
+    if (!(!empty($data['message']) and ($data['sender_role'] == 'system' or ($data['sender_role'] == 'group' and !empty($data['sender_group'])) or ($data['sender_role'] == 'admin' and !empty($data['sender_admin']))))) {
+        return false;
+    }
+
+    $data['receiver_grs'] = !empty($data['receiver_grs']) ? implode(',', $data['receiver_grs']) : '';
+    $data['sender_role'] == 'group' && $data['receiver_grs'] = '';
+    $data['receiver_ids'] = !empty($data['receiver_ids']) ? implode(',', $data['receiver_ids']) : '';
+    $data['message'] = nv_nl2br(strip_tags($data['message'], '<br>'), '<br/>');
+    if (!empty($data['link']) and !preg_match('#^https?\:\/\/#', $data['link'])) {
+        str_starts_with($data['link'], NV_BASE_SITEURL) && $data['link'] = substr($data['link'], strlen(NV_BASE_SITEURL));
+    }
+
+    $sth = $db->prepare('INSERT INTO ' . NV_PUSH_GLOBALTABLE . ' (receiver_grs, receiver_ids, sender_role, sender_group, sender_admin, message, link, add_time, exp_time) VALUES 
+    (:receiver_grs, :receiver_ids, :sender_role, ' . $data['sender_group'] . ', ' . $data['sender_admin'] . ', :message, :link, ' . $data['add_time'] . ', ' . $data['exp_time'] . ')');
+    $sth->bindValue(':receiver_grs', $data['receiver_grs'], PDO::PARAM_STR);
+    $sth->bindValue(':receiver_ids', $data['receiver_ids'], PDO::PARAM_STR);
+    $sth->bindValue(':sender_role', $data['sender_role'], PDO::PARAM_STR);
+    $sth->bindValue(':message', $data['message'], PDO::PARAM_STR);
+    $sth->bindValue(':link', $data['link'], PDO::PARAM_STR);
+    $sth->execute();
+
+    return $db->lastInsertId();
+}
+
+/**
  * nv_redirect_location()
  *
  * @param string $url
@@ -2889,65 +2944,44 @@ function nv_set_authorization()
  * Make an asynchronous POST request
  * Thực hiện yêu cầu POST không đồng bộ trong nội bộ site mà không cần chờ phản hồi
  * => Không ảnh hưởng, không trì hoãn tiến trình đang chạy
- * 
+ *
  * post_async()
- * 
- * @param mixed $url 
- * @param mixed $params 
- * @param array $headers 
+ *
+ * @param string $url
+ * @param array  $params
+ * @param array  $headers
  */
-function post_async($url, $params, $headers = [])
+function post_async($url, $params = [], $headers = [])
 {
-    ksort($params);
-    $post_string = http_build_query($params);
     !str_starts_with($url, NV_MY_DOMAIN) && $url = NV_MY_DOMAIN . $url;
-    $parts = parse_url($url);
-
-    $is_https = ($parts['scheme'] === 'https');
-    $referer = $parts['scheme'] . '://' . $parts['host'];
-    if (!$is_https) {
-        $port = isset($parts['port']) ? $parts['port'] : 80;
-        $host = $parts['host'] . ($port != 80 ? ':' . $port : '');
-        isset($parts['port']) && $referer .= ':' . $parts['port'];
-        $fp = fsockopen($parts['host'], $port, $errno, $errstr, 30);
-    } else {
-        $context = stream_context_create([
-            "ssl" => [
-                "verify_peer" => false,
-                "verify_peer_name" => false
-            ]
-        ]);
-        $port = isset($parts['port']) ? $parts['port'] : 443;
-        $host = $parts['host'] . ($port != 443 ? ':' . $port : '');
-        $referer .= ':' . (isset($parts['port']) ? $parts['port'] : 443);
-        $fp = stream_socket_client('ssl://' . $parts['host'] . ':' . $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
-    }
-
-    $path = isset($parts['path']) ? $parts['path'] : '/';
-    if (isset($parts['query'])) {
-        $path .= '?' . $parts['query'];
-    }
-
-    $out = "POST " . $path . " HTTP/1.1\r\n";
-    $out .= "Host: " . $host . "\r\n";
-    $out .= "User-Agent: NUKEVIET\r\n";
-    $out .= "Referer: " . $referer . "\r\n";
-    $out .= "Content-Type: application/x-www-form-urlencoded\r\n";
-    $out .= "Content-Length: " . strlen($post_string) . "\r\n";
-    if (!empty($headers)) {
-        foreach ($headers as $key => $value) {
-            $out .= "{$key}: {$value}\r\n";
+    if (nv_is_url($url)) {
+        if (!empty($params)) {
+            ksort($params);
+            $post_string = http_build_query($params);
+        } else {
+            $post_string = '';
         }
-    }
-    $out .= "Connection: Close\r\n\r\n";
-    $out .= $post_string;
 
-    fwrite($fp, $out);
-    if ($is_https) {
-        stream_set_timeout($fp, 1);
-        stream_get_contents($fp, -1);
+        !isset($headers['Referer']) && $headers['Referer'] = NV_MY_DOMAIN;
+        $_headers = [];
+        foreach ($headers as $name => $value) {
+            $_headers[] = "{$name}: {$value}";
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_string);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 50);
+        curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $_headers);
+        curl_exec($ch);
+        curl_close($ch);
     }
-    fclose($fp);
 }
 
 /**
@@ -3136,7 +3170,6 @@ function nv_autoLinkDisable($text)
  * @param mixed  $args        => Tham số truyền vào
  * @param mixed  $default     => Dữ liệu mặc định trả về nếu hook không tồn tại
  * @param mixed  $return_type => Để trống thì dữ liệu trả về là giá trị cuối cùng. 1: Gộp array_merge. 2: Gộp array_merge_recursive
- * @return
  */
 function nv_apply_hook($module, $tag, $args = [], $default = null, $return_type = 0)
 {
@@ -3189,14 +3222,14 @@ function nv_apply_hook($module, $tag, $args = [], $default = null, $return_type 
 /**
  * nv_add_hook()
  *
- * @param mixed  $module_name   => Module xảy ra event
- * @param mixed  $tag           => TAG
- * @param int    $priority      => Ưu tiên
- * @param mixed  $callback      => Hàm chạy
- * @param string $hook_module   => Module sử dụng dữ liệu
- * @param int    $pid           => ID quản lý trong CSDL
+ * @param mixed  $module_name => Module xảy ra event
+ * @param mixed  $tag         => TAG
+ * @param int    $priority    => Ưu tiên
+ * @param mixed  $callback    => Hàm chạy
+ * @param string $hook_module => Module sử dụng dữ liệu
+ * @param int    $pid         => ID quản lý trong CSDL
  */
-function nv_add_hook($module_name, $tag, $priority = 10, $callback, $hook_module = '', $pid = 0)
+function nv_add_hook($module_name, $tag, $priority, $callback, $hook_module = '', $pid = 0)
 {
     global $nv_hooks;
 
@@ -3215,4 +3248,95 @@ function nv_add_hook($module_name, $tag, $priority = 10, $callback, $hook_module
         'module' => $hook_module,
         'pid' => $pid
     ];
+}
+
+/**
+ * set_cdn_urls()
+ *
+ * @param mixed $global_config
+ * @param mixed $cdn_is_enabled
+ * @param mixed $cl_country
+ */
+function set_cdn_urls(&$global_config, $cdn_is_enabled, $cl_country)
+{
+    global $countries;
+
+    // Không áp dụng CDN ở môi trường localhost
+    if (is_localhost()) {
+        $global_config['cdn_url'] = $global_config['nv_static_url'] = $global_config['assets_cdn_url'] = '';
+    } else {
+        // Chỉ áp dụng CDN khi bật hook và $global_config['cdn_url'] không rỗng
+        if ($cdn_is_enabled and !empty($global_config['cdn_url'])) {
+            // Nếu $global_config['cdn_url'] dạng mảng
+            if (is_array($global_config['cdn_url'])) {
+                // Áp dụng CDN theo quốc gia chỉ trong trường hợp quốc gia được xác định hợp lệ
+                $set_country = false;
+                if (isset($countries[$cl_country]) and ($cl_country != 'ZZ')) {
+                    $set_country = true;
+                }
+                // Nếu quốc gia trong danh sách không kích hoạt CDN => loại trừ
+                $except_countries = '';
+                if (!empty($global_config['cdn_url']['except'][1])) {
+                    $except_countries = is_array($global_config['cdn_url']['except'][1]) ? implode(' ', $global_config['cdn_url']['except'][1]) : $global_config['cdn_url']['except'][1];
+                }
+                if ($set_country and !empty($except_countries) and str_contains($except_countries, $cl_country)) {
+                    $global_config['cdn_url'] = '';
+                } else {
+                    $urls = $global_config['cdn_url'];
+                    unset($urls['except']);
+                    $global_config['cdn_url'] = '';
+                    foreach ($urls as $cdn => $vals) {
+                        // Xác định CDN mặc định nếu nó chưa được định nghĩa
+                        if (empty($global_config['cdn_url']) and !empty($vals[0])) {
+                            $global_config['cdn_url'] = $cdn;
+                        }
+                        // Tìm CDN được chỉ định riêng cho quốc gia,
+                        // nếu tìm ra thì dừng vòng lặp và áp dụng ngay
+                        elseif (!empty($vals[1]) and $set_country) {
+                            $inc_countries = is_array($vals[1]) ? implode(' ', $vals[1]) : $vals[1];
+                            if (str_contains($inc_countries, $cl_country)) {
+                                $global_config['cdn_url'] = $cdn;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            $global_config['cdn_url'] = '';
+        }
+
+        // Nếu bật CDN jsDelivr thì $global_config['assets_cdn_url']
+        // được gán cho giá trị $global_config['core_cdn_url'] ghi trong /config.php
+        $global_config['assets_cdn_url'] = !empty($global_config['assets_cdn']) ? (!empty($global_config['core_cdn_url']) ? $global_config['core_cdn_url'] : 'https://cdn.jsdelivr.net/gh/nukeviet/nukeviet/') : '';
+
+        (!empty($global_config['nv_static_url']) && !preg_match('/^((https?\:)?\/\/)/', $global_config['nv_static_url'])) && $global_config['nv_static_url'] = '//' . $global_config['nv_static_url'];
+        (!empty($global_config['cdn_url']) && !preg_match('/^((https?\:)?\/\/)/', $global_config['cdn_url'])) && $global_config['cdn_url'] = '//' . $global_config['cdn_url'];
+        (!empty($global_config['assets_cdn_url']) && !preg_match('/^((https?\:)?\/\/)/', $global_config['assets_cdn_url'])) && $global_config['assets_cdn_url'] = '//' . $global_config['assets_cdn_url'];
+    }
+}
+
+/**
+ * nv_http_get_lang()
+ *
+ * @param array $input
+ * @return string
+ */
+function nv_http_get_lang($input)
+{
+    global $lang_global;
+
+    if (!isset($input['code']) or !isset($input['message'])) {
+        return '';
+    }
+
+    if (!empty($lang_global['error_code_' . $input['code']])) {
+        return $lang_global['error_code_' . $input['code']];
+    }
+
+    if (!empty($input['message'])) {
+        return $input['message'];
+    }
+
+    return 'Error' . ($input['code'] ? ': ' . $input['code'] . '.' : '.');
 }

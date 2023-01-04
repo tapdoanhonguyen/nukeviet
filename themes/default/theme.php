@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -67,7 +67,7 @@ function nv_mailHTML($title, $content, $footer = '')
  */
 function nv_site_theme($contents, $full = true)
 {
-    global $home, $array_mod_title, $lang_global, $global_config, $site_mods, $module_name, $module_info, $op_file, $mod_title, $my_head, $my_footer, $client_info, $module_config, $op, $opensearch_link;
+    global $home, $array_mod_title, $lang_global, $global_config, $site_mods, $module_name, $module_info, $op_file, $my_head, $my_footer, $client_info, $module_config, $op, $opensearch_link, $custom_preloads;
 
     // Determine tpl file, check exists tpl file
     $layout_file = ($full) ? 'layout.' . $module_info['layout_funcs'][$op_file] . '.tpl' : 'simple.tpl';
@@ -126,11 +126,36 @@ function nv_site_theme($contents, $full = true)
         $xtpl->parse('main.metatags');
     }
 
+    // XÁC ĐỊNH BIẾN $custom_preloads - TẢI TRƯỚC TẬP TIN (không bắt buộc)
+    // Các tập tin hình ảnh, font chữ được liệt kê trong các file css nguồn
+    // theo mặc định sẽ được tải sau khi trình duyệt đã phân tích xong toàn bộ file css.
+    // Tải trước các tập tin hình ảnh, font chữ này sẽ khiến việc load trang nhanh hơn.
+    // Thuộc tính 'as' và 'href' bắt buộc khai báo, thuộc tính 'type' - không bắt buộc,
+    // thuộc tính 'crossorigin' - bắt buộc nếu tập tin đòi hỏi CORS (ví dụ: font chữ).
+    // Nếu đường dẫn của tập tin trong file css nguồn là tương đối thì giá trị của thuộc tính 'href'
+    // sẽ là đường dẫn đến nó tính từ thư mục gốc của site (tương tự như của file css nguồn).
+    $custom_preloads[] = [
+        'as' => 'font',
+        // File fontawesome-webfont.woff2 được tải từ font-awesome.min.css,
+        // nên đường dẫn đến thư mục của font-awesome.min.css thế nào thì của fontawesome-webfont.woff2 như thế
+        'href' => ASSETS_STATIC_URL . '/fonts/fontawesome-webfont.woff2',
+        'type' => 'font/woff2',
+        'crossorigin' => true
+    ];
+    $custom_preloads[] = [
+        'as' => 'font',
+        // File NukeVietIcons.woff2 được tải từ style.css,
+        // nên đường dẫn đến thư mục của style.css thế nào thì của NukeVietIcons.woff2 như thế
+        'href' => NV_STATIC_URL . 'themes/default/fonts/NukeVietIcons.woff2',
+        'type' => 'font/woff2',
+        'crossorigin' => true
+    ];
+
     //Links
     $html_links = [];
     $html_links[] = [
         'rel' => 'stylesheet',
-        'href' => NV_STATIC_URL . NV_ASSETS_DIR . '/css/font-awesome.min.css'
+        'href' => ASSETS_STATIC_URL . '/css/font-awesome.min.css'
     ];
     if ($global_config['current_theme_type'] == 'r') {
         $html_links[] = [
@@ -197,7 +222,7 @@ function nv_site_theme($contents, $full = true)
 
             $html_links[] = [
                 'rel' => 'stylesheet',
-                'href' => NV_BASE_SITEURL . NV_ASSETS_DIR . '/css/' . $customFileName . '.css'
+                'href' => NV_STATIC_URL . NV_ASSETS_DIR . '/css/' . $customFileName . '.css'
             ];
         }
 
@@ -241,6 +266,14 @@ function nv_site_theme($contents, $full = true)
         }
     }
 
+    // CSS của nút ẩn/hiện mật khẩu
+    if (($global_config['passshow_button'] === 1) or ($global_config['passshow_button'] === 2 and defined('NV_IS_USER')) or ($global_config['passshow_button'] === 3 and defined('NV_IS_ADMIN'))) {
+        $html_links[] = [
+            'rel' => 'stylesheet',
+            'href' => ASSETS_STATIC_URL . '/js/show-pass-btn/bootstrap3-show-pass.css'
+        ];
+    }
+
     foreach ($html_links as $links) {
         foreach ($links as $key => $value) {
             $xtpl->assign('LINKS', [
@@ -265,6 +298,14 @@ function nv_site_theme($contents, $full = true)
         'content' => NV_STATIC_URL . 'themes/' . $global_config['module_theme'] . '/js/custom.js'
     ];
 
+    // JS của nút ẩn/hiện mật khẩu
+    if (($global_config['passshow_button'] === 1) or ($global_config['passshow_button'] === 2 and defined('NV_IS_USER')) or ($global_config['passshow_button'] === 3 and defined('NV_IS_ADMIN'))) {
+        $html_js[] = [
+            'ext' => 1,
+            'content' => ASSETS_STATIC_URL . '/js/show-pass-btn/bootstrap3-show-pass.js'
+        ];
+    }
+
     foreach ($html_js as $js) {
         if ($js['ext']) {
             $xtpl->assign('JS_SRC', $js['content']);
@@ -286,12 +327,21 @@ function nv_site_theme($contents, $full = true)
     // Header variables
     $xtpl->assign('SITE_NAME', $global_config['site_name']);
     $xtpl->assign('THEME_SITE_HREF', NV_BASE_SITEURL . 'index.php?' . NV_LANG_VARIABLE . '=' . NV_LANG_DATA);
-    $xtpl->assign('LOGO_SRC', NV_BASE_SITEURL . $global_config['site_logo']);
+    $xtpl->assign('LOGO_SRC', NV_STATIC_URL . $global_config['site_logo']);
 
     if (empty($global_config['site_banner'])) {
+        $custom_preloads[] = [
+            'as' => 'image',
+            'href' => NV_STATIC_URL . 'themes/' . $global_config['module_theme'] . '/images/header.png',
+            'type' => 'image/png'
+        ];
         $xtpl->assign('BANNER_SRC', NV_STATIC_URL . 'themes/' . $global_config['module_theme'] . '/images/header.png');
     } else {
-        $xtpl->assign('BANNER_SRC', NV_BASE_SITEURL . $global_config['site_banner']);
+        $custom_preloads[] = [
+            'as' => 'image',
+            'href' => NV_STATIC_URL . $global_config['site_banner']
+        ];
+        $xtpl->assign('BANNER_SRC', NV_STATIC_URL . $global_config['site_banner']);
     }
 
     if (preg_match("/<h1[^\>]*\>/i", $contents)) {

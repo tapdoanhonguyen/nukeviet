@@ -2,12 +2,12 @@
 <!-- BEGIN: error -->
 <div class="alert alert-danger">{ERROR}</div>
 <!-- END: error -->
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery/jquery.validate.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery/jquery.validate.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.validator-{NV_LANG_INTERFACE}.js"></script>
 
-<link rel="stylesheet" type="text/css" href="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.css">
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{NV_BASE_SITEURL}{NV_ASSETS_DIR}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
+<link rel="stylesheet" type="text/css" href="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.css">
+<script type="text/javascript" src="{ASSETS_STATIC_URL}/js/jquery-ui/jquery-ui.min.js"></script>
+<script type="text/javascript" src="{ASSETS_LANG_STATIC_URL}/js/language/jquery.ui.datepicker-{NV_LANG_INTERFACE}.js"></script>
 <form action="{NV_BASE_ADMINURL}index.php" method="post" id="frm">
     <input type="hidden" name="{NV_NAME_VARIABLE}" value="{MODULE_NAME}" />
     <input type="hidden" name="{NV_OP_VARIABLE}" value="{OP}" />
@@ -43,9 +43,22 @@
                     <td><input type="checkbox" value="1" name="spadmin_add_admin"{DATA.spadmin_add_admin} /></td>
                 </tr>
                 <tr>
-                    <td>{LANG.admin_check_pass_time}</td>
-                    <td><input class="form-control pull-left" style="width:50px;" type="text" value="{ADMIN_CHECK_PASS_TIME}" name="admin_check_pass_time" maxlength="3"/>({GLANG.min})</td>
+                    <td>{LANG.admin_login_duration}<p class="help-block mb-0">({LANG.admin_login_duration_note})</p></td>
+                    <td>
+                        <div class="input-group w100">
+                            <input class="form-control number" type="text" value="{DATA.admin_login_duration}" name="admin_login_duration" maxlength="4"/>
+                            <span class="input-group-addon">{GLANG.min}</span>
+                        </div>
+                    </td>
                 </tr>
+                <tr>
+                    <td>{LANG.admin_check_pass_time}</td>
+                    <td>
+                        <div class="input-group w100">
+                            <input class="form-control number" type="text" value="{ADMIN_CHECK_PASS_TIME}" name="admin_check_pass_time" maxlength="3"/>
+                            <span class="input-group-addon">{GLANG.min}</span>
+                        </div>
+                    </tr>
                 <tr>
                     <td>{LANG.admin_user_logout}</td>
                     <td><input type="checkbox" value="1" name="admin_user_logout"{DATA.admin_user_logout} /></td>
