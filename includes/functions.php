@@ -15,6 +15,20 @@ if (!defined('NV_MAINFILE')) {
     exit('Stop!!!');
 }
 
+// Dành cho các phiên bản php nhỏ hơn 8.1
+if (!function_exists('array_is_list')) {
+    /**
+     * array_is_list()
+     * Kiểm tra mảng có phải có dạng danh sách hay không (key từ 0 đến n)
+     *
+     * @param mixed $a
+     * @return bool
+     */
+    function array_is_list($a)
+    {
+        return is_array($a) && ($a === [] || (array_keys($a) === range(0, count($a) - 1)));
+    }
+}
 /**
  * nv_object2array()
  *
@@ -1889,27 +1903,38 @@ function getCanonicalUrl($page_url, $query_check = false, $abs_comp = false)
  * nv_check_domain()
  *
  * @param string $domain
- * @return string
+ * @return string $domain_ascii
  */
 function nv_check_domain($domain)
 {
-    if (preg_match('/^([a-z0-9]+)([a-z0-9\-\.]+)\.([a-z0-9\-]+)$/', $domain) or $domain == 'localhost' or filter_var($domain, FILTER_VALIDATE_IP)) {
+    if (preg_match("/^([a-z0-9](-*[a-z0-9])*)(\.([a-z0-9](-*[a-z0-9])*))*$/i", $domain) and preg_match('/^.{1,253}$/', $domain) and preg_match("/^[^\.]{1,63}(\.[^\.]{1,63})*$/", $domain)) {
         return $domain;
     }
+
+    if ($domain == 'localhost') {
+        return $domain;
+    }
+
+    if (filter_var($domain, FILTER_VALIDATE_IP)) {
+        return $domain;
+    }
+
     if (!empty($domain)) {
         if (function_exists('idn_to_ascii')) {
-            $domain_ascii = idn_to_ascii($domain, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+            $domain = idn_to_ascii($domain, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
         } else {
             $Punycode = new TrueBV\Punycode();
             try {
-                $domain_ascii = $Punycode->encode($domain);
+                $domain = $Punycode->encode($domain);
             } catch (\Exception $e) {
-                $domain_ascii = '';
+                $domain = '';
             }
         }
-        if (preg_match('/^xn\-\-([a-z0-9\-\.]+)\.([a-z0-9\-]+)$/', $domain_ascii)) {
-            return $domain_ascii;
+
+        if (preg_match('/^xn\-\-([a-z0-9\-\.]+)\.([a-z0-9\-]+)$/', $domain)) {
+            return $domain;
         }
+
         if ($domain == NV_SERVER_NAME) {
             return $domain;
         }
@@ -1919,18 +1944,99 @@ function nv_check_domain($domain)
 }
 
 /**
+ * xssValid()
+ *
+ * @param string $value
+ * @return bool
+ */
+function xssValid($value)
+{
+    $value = preg_replace('/%3A%2F%2F/', '', $value); // :// to empty
+    $value = preg_replace('/([\x00-\x08][\x0b-\x0c][\x0e-\x20])/', '', $value);
+    $value = preg_replace('/%u0([a-z0-9]{3})/i', '&#x\\1;', $value);
+    $value = preg_replace('/%([a-z0-9]{2})/i', '&#x\\1;', $value);
+    $value = str_ireplace(['&#x53;&#x43;&#x52;&#x49;&#x50;&#x54;', '&#x26;&#x23;&#x78;&#x36;&#x41;&#x3B;&#x26;&#x23;&#x78;&#x36;&#x31;&#x3B;&#x26;&#x23;&#x78;&#x37;&#x36;&#x3B;&#x26;&#x23;&#x78;&#x36;&#x31;&#x3B;&#x26;&#x23;&#x78;&#x37;&#x33;&#x3B;&#x26;&#x23;&#x78;&#x36;&#x33;&#x3B;&#x26;&#x23;&#x78;&#x37;&#x32;&#x3B;&#x26;&#x23;&#x78;&#x36;&#x39;&#x3B;&#x26;&#x23;&#x78;&#x37;&#x30;&#x3B;&#x26;&#x23;&#x78;&#x37;&#x34;&#x3B;', '/*', '*/', '<!--', '-->', '<!-- -->', '&#x0A;', '&#x0D;', '&#x09;', ''], '', $value);
+
+    $search = '/&#[xX]0{0,8}(21|22|23|24|25|26|27|28|29|2a|2b|2d|2f|30|31|32|33|34|35|36|37|38|39|3a|3b|3d|3f|40|41|42|43|44|45|46|47|48|49|4a|4b|4c|4d|4e|4f|50|51|52|53|54|55|56|57|58|59|5a|5b|5c|5d|5e|5f|60|61|62|63|64|65|66|67|68|69|6a|6b|6c|6d|6e|6f|70|71|72|73|74|75|76|77|78|79|7a|7b|7c|7d|7e);?/i';
+    $value = preg_replace_callback($search, function ($m) {
+        return chr(hexdec($m[1]));
+    }, $value);
+
+    $search = '/&#0{0,8}(33|34|35|36|37|38|39|40|41|42|43|45|47|48|49|50|51|52|53|54|55|56|57|58|59|61|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100|101|102|103|104|105|106|107|108|109|110|111|112|113|114|115|116|117|118|119|120|121|122|123|124|125|126);?/i';
+    $value = preg_replace_callback($search, function ($m) {
+        return chr($m[1]);
+    }, $value);
+
+    $search = ['&#60', '&#060', '&#0060', '&#00060', '&#000060', '&#0000060', '&#60;', '&#060;', '&#0060;', '&#00060;', '&#000060;', '&#0000060;', '&#x3c', '&#x03c', '&#x003c', '&#x0003c', '&#x00003c', '&#x000003c', '&#x3c;', '&#x03c;', '&#x003c;', '&#x0003c;', '&#x00003c;', '&#x000003c;', '&#X3c', '&#X03c', '&#X003c', '&#X0003c', '&#X00003c', '&#X000003c', '&#X3c;', '&#X03c;', '&#X003c;', '&#X0003c;', '&#X00003c;', '&#X000003c;', '&#x3C', '&#x03C', '&#x003C', '&#x0003C', '&#x00003C', '&#x000003C', '&#x3C;', '&#x03C;', '&#x003C;', '&#x0003C;', '&#x00003C;', '&#x000003C;', '&#X3C', '&#X03C', '&#X003C', '&#X0003C', '&#X00003C', '&#X000003C', '&#X3C;', '&#X03C;', '&#X003C;', '&#X0003C;', '&#X00003C;', '&#X000003C;', '\x3c', '\x3C', '\u003c', '\u003C'];
+    $value = str_ireplace($search, '<', $value);
+
+    $search = [
+        'expression' => '/e\s*x\s*p\s*r\s*e\s*s\s*s\s*i\s*o\s*n/si',
+        'javascript' => '/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t/si',
+        'livescript' => '/l\s*i\s*v\s*e\s*s\s*c\s*r\s*i\s*p\s*t/si',
+        'behavior' => '/b\s*e\s*h\s*a\s*v\s*i\s*o\s*r/si',
+        'vbscript' => '/v\s*b\s*s\s*c\s*r\s*i\s*p\s*t/si',
+        'script' => '/s\s*c\s*r\s*i\s*p\s*t/si',
+        'applet' => '/a\s*p\s*p\s*l\s*e\s*t/si',
+        'alert' => '/a\s*l\s*e\s*r\s*t/si',
+        'document' => '/d\s*o\s*c\s*u\s*m\s*e\s*n\s*t/si',
+        'write' => '/w\s*r\s*i\s*t\s*e/si',
+        'cookie' => '/c\s*o\s*o\s*k\s*i\s*e/si',
+        'window' => '/w\s*i\s*n\s*d\s*o\s*w/si',
+        'data:' => '/d\s*a\s*t\s*a\s*\:/si'
+    ];
+    $value = preg_replace(array_values($search), array_keys($search), $value);
+    if (preg_match('/(expression|javascript|behavior|vbscript|mocha|livescript)(\:*)/', $value)) {
+        return false;
+    }
+
+    if (strcasecmp($value, strip_tags($value)) !== 0) {
+        return false;
+    }
+
+    $disableCommands = [
+        'base64_decode',
+        'cmd',
+        'passthru',
+        'eval',
+        'exec',
+        'system',
+        'fopen',
+        'fsockopen',
+        'file',
+        'file_get_contents',
+        'readfile',
+        'unlink'
+    ];
+    if (preg_match('#(' . implode('|', $disableCommands) . ')(\s*)\((.*?)\)#si', $value)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * nv_is_url()
  *
  * @param string $url
+ * @param bool   $isInternal
  * @return bool
  */
-function nv_is_url($url)
+function nv_is_url($url, $isInternal = false)
 {
-    if (!preg_match('/^(http|https|ftp|gopher)\:\/\//', $url)) {
+    if ($isInternal and str_starts_with($url, NV_BASE_SITEURL) and !preg_match('/^(http|https|ftp)\:\/\//i', $url)) {
+        $url = NV_MY_DOMAIN . $url;
+    }
+
+    if (!preg_match('/^(http|https|ftp)\:\/\//', $url)) {
         return false;
     }
 
     $url = nv_strtolower($url);
+
+    if (!xssValid($url)) {
+        return false;
+    }
 
     if (!($parts = parse_url($url))) {
         return false;
@@ -1977,7 +2083,11 @@ function nv_check_url($url, $isTriggerError = true, $is_200 = 0)
     $url = str_replace(' ', '%20', $url);
     $url = nv_strtolower($url);
 
-    if (!preg_match('/^(http|https|ftp|gopher)\:\/\//', $url)) {
+    if (!preg_match('/^(http|https|ftp)\:\/\//', $url)) {
+        return false;
+    }
+
+    if (!xssValid($url)) {
         return false;
     }
 
@@ -2247,7 +2357,7 @@ function nv_url_rewrite_callback($matches)
             unset($query_array[NV_OP_VARIABLE]);
         }
 
-        $rewrite_string = (defined('NV_IS_REWRITE_OBSOLUTE') ? NV_MY_DOMAIN : '') . NV_BASE_SITEURL . ($global_config['check_rewrite_file'] ? '' : 'index.php/') . implode('/', $op_rewrite) . ($op_rewrite_count ? $rewrite_end : '');
+        $rewrite_string = ((defined('NV_IS_REWRITE_OBSOLUTE') and defined('NV_ENABLE_REWRITE_OBSOLUTE')) ? NV_MY_DOMAIN : '') . NV_BASE_SITEURL . ($global_config['check_rewrite_file'] ? '' : 'index.php/') . implode('/', $op_rewrite) . ($op_rewrite_count ? $rewrite_end : '');
 
         if (!empty($query_array)) {
             $rewrite_string .= '?' . http_build_query($query_array, '', $is_amp ? '&amp;' : '&');
@@ -2851,12 +2961,12 @@ function nv_autoLinkDisable($text)
  * Make an asynchronous POST request
  * Thực hiện yêu cầu POST không đồng bộ trong nội bộ site mà không cần chờ phản hồi
  * => Không ảnh hưởng, không trì hoãn tiến trình đang chạy
- * 
+ *
  * post_async()
- * 
- * @param mixed $url 
- * @param mixed $params 
- * @param array $headers 
+ *
+ * @param mixed $url
+ * @param mixed $params
+ * @param array $headers
  */
 function post_async($url, $params, $headers = [])
 {

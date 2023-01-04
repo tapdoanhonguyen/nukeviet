@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -444,6 +444,7 @@ function nv_html_meta_tags($html = true)
                 $meta_property['og:image:type'] = $imagesize['mime'];
                 $meta_property['og:image:width'] = $imagesize[0];
                 $meta_property['og:image:height'] = $imagesize[1];
+                $meta_property['og:image:alt'] = $global_config['site_name'];
             }
         }
         $meta_property['og:site_name'] = $global_config['site_name'];
@@ -759,6 +760,10 @@ function nv_html_site_js($html = true, $other_js = [], $language_js = true, $glo
     $jsDef .= ',nv_recaptcha_ver=' . $global_config['recaptcha_ver'];
     $jsDef .= ',nv_recaptcha_sitekey="' . $global_config['recaptcha_sitekey'] . '"';
     $jsDef .= ',nv_recaptcha_type="' . $global_config['recaptcha_type'] . '"';
+
+    !isset($global_config['XSSsanitize']) && $global_config['XSSsanitize'] = 1;
+    $jsDef .= ',XSSsanitize=' . ($global_config['XSSsanitize'] ? 1 : 0);
+
     $jsDef .= ';';
 
     $return = [];
@@ -779,9 +784,21 @@ function nv_html_site_js($html = true, $other_js = [], $language_js = true, $glo
     }
 
     if ($global_js) {
+        if ($global_config['XSSsanitize']) {
+            $return[] = [
+                'ext' => 1,
+                'content' => NV_STATIC_URL . NV_ASSETS_DIR . '/js/DOMPurify/purify.js'
+            ];
+        }
+
         $return[] = [
             'ext' => 1,
             'content' => NV_STATIC_URL . NV_ASSETS_DIR . '/js/global.js'
+        ];
+
+        $return[] = [
+            'ext' => 1,
+            'content' => NV_STATIC_URL . NV_ASSETS_DIR . '/js/site.js'
         ];
     }
 

@@ -22,6 +22,7 @@
                 <tr>
                     <td>
                         <a href="#apiroledetail{ROW.role_id}" data-toggle="modal">{ROW.role_title}</a> <strong class="text-danger">({ROW.apitotal})</strong>
+                        <!-- BEGIN: api_doesnt_exist --><div class="small text-danger"><i class="fa fa-exclamation-triangle"></i> {LANG.api_roles_api_doesnt_exist}:<ul class="list-unstyled mb-0"><!-- BEGIN: api --><li>- {API}</li><!-- END: api --></ul></div><!-- END: api_doesnt_exist -->
                     </td>
                     <td>{ROW.role_description}</td>
                     <td>{ROW.addtime}</td>
@@ -158,7 +159,8 @@
                 <div class="row">
                     <div class="col-sm-18 col-sm-offset-6">
                         <input type="hidden" name="current_cat" value="{CURRENT_CAT}">
-                        <button type="submit" name="submit" value="submit" class="btn btn-primary">{GLANG.save}</button>
+                        <input type="hidden" name="save" value="1">
+                        <button type="submit" value="submit" class="btn btn-primary">{GLANG.save}</button>
                     </div>
                 </div>
             </form>

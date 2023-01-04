@@ -4,7 +4,7 @@
  * NukeViet Content Management System
  * @version 4.x
  * @author VINADES.,JSC <contact@vinades.vn>
- * @copyright (C) 2009-2021 VINADES.,JSC. All rights reserved
+ * @copyright (C) 2009-2022 VINADES.,JSC. All rights reserved
  * @license GNU/GPL version 2 or any later version
  * @see https://github.com/nukeviet The NukeViet CMS GitHub project
  */
@@ -13,9 +13,15 @@ if (!defined('NV_MAINFILE')) {
     exit('Stop!!!');
 }
 
-iconv_set_encoding('input_encoding', $global_config['site_charset']);
-iconv_set_encoding('internal_encoding', $global_config['site_charset']);
-iconv_set_encoding('output_encoding', $global_config['site_charset']);
+// https://www.php.net/manual/en/function.iconv-set-encoding.php#119888
+// https://github.com/nukeviet/nukeviet/issues/3376
+if (PHP_VERSION_ID < 50600) {
+    iconv_set_encoding('input_encoding', $global_config['site_charset']);
+    iconv_set_encoding('internal_encoding', $global_config['site_charset']);
+    iconv_set_encoding('output_encoding', $global_config['site_charset']);
+} else {
+    ini_set('default_charset', $global_config['site_charset']);
+}
 
 /**
  * nv_internal_encoding()
@@ -25,7 +31,11 @@ iconv_set_encoding('output_encoding', $global_config['site_charset']);
  */
 function nv_internal_encoding($encoding)
 {
-    return iconv_set_encoding('internal_encoding', $encoding);
+    if (PHP_VERSION_ID < 50600) {
+        return iconv_set_encoding('internal_encoding', $encoding);
+    }
+
+    return true;
 }
 
 /**
@@ -125,4 +135,28 @@ function nv_strtoupper($string)
     include NV_ROOTDIR . '/includes/utf8/lookup.php';
 
     return strtr($string, $utf8_lookup['strtoupper']);
+}
+
+/**
+ * nv_utf8_encode()
+ * function thay thế cho utf8_encode đã lỗi thời
+ *
+ * @param string $string
+ * @return string
+ */
+function nv_utf8_encode($string)
+{
+    return iconv('ISO-8859-1', 'UTF-8', $string);
+}
+
+/**
+ * nv_utf8_decode()
+ * function thay thế cho utf8_decode đã lỗi thời
+ *
+ * @param string $string
+ * @return string
+ */
+function nv_utf8_decode($string)
+{
+    return iconv('UTF-8', 'ISO-8859-1', $string);
 }

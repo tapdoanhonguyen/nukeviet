@@ -22,7 +22,7 @@ $log_userid = $is_system ? 0 : $user_info['userid'];
 
 if (defined('NV_IS_ADMIN')) {
     nv_insert_logs(NV_LANG_DATA, 'login', '[' . $user_info['username'] . '] ' . $lang_global['admin_logout_title'], ' Client IP:' . NV_CLIENT_IP, $log_userid);
-    $nv_Request->unset_request('admin,online', 'session');
+    nv_admin_logout();
 } elseif (!empty($global_users_config['active_user_logs'])) {
     nv_insert_logs(NV_LANG_DATA, $module_name, '[' . $user_info['username'] . '] ' . $lang_module['userlogout'], ' Client IP:' . NV_CLIENT_IP, $log_userid);
 }
@@ -31,7 +31,7 @@ $url_redirect = !empty($client_info['referer']) ? $client_info['referer'] : (iss
 if (defined('NV_IS_USER_FORUM') or defined('SSO_SERVER')) {
     require_once NV_ROOTDIR . '/' . $global_config['dir_forum'] . '/nukeviet/logout.php';
 } else {
-    $nv_Request->unset_request('nvloginhash', 'cookie');
+    NukeViet\Core\User::unset_userlogin_hash();
     if ($user_info['current_mode'] == 4 and file_exists(NV_ROOTDIR . '/modules/users/login/cas-' . $user_info['openid_server'] . '.php')) {
         define('CAS_LOGOUT_URL_REDIRECT', $url_redirect);
         include NV_ROOTDIR . '/modules/users/login/cas-' . $user_info['openid_server'] . '.php';
